@@ -1,0 +1,26 @@
+{
+  "name": "comp7115project",
+  "version": "0.1.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mike-seagull/comp7115project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mike-seagull/comp7115project/issues"
+  },
+  "homepage": "https://github.com/mike-seagull/comp7115project#readme",
+  "engines": {
+    "node": "5.0.0"
+  },
+  "dependencies": {
+    "express": "^4.14.0"
+  }
+}
