@@ -1,0 +1,74 @@
+<html>
+<head>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <script src="/js/jquery.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  <style>
+    body {
+      background: #eee !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="col-sm-offset-2 col-sm-8 col-md-offset-3 col-md-6">
+      <div class="header">
+
+        <div class="header__text-group text-center">
+          <h1 class="header__heading">Destination Gabon</h1>
+          <p class="header__subheading">Rejoignez la communauté</p>
+        </div> <!-- close .text-group -->
+      </div> <!-- close .header -->
+      <p class="text-primary text-center">Ou créer un compte maintenant</p>
+      <br />
+      
+      <div class="form-register">
+        <form name="register">
+          <input name="utf8" type="hidden" value="✓">
+          <div class="row">
+            <div class="col-xs-6">
+              <div class="form-group">
+                <label for="user_first_name">First name</label>
+                <input autofocus="autofocus" class="form-control" required="required" type="text" name="user[first_name]" id="user_first_name">
+              </div> <!-- close .form-group -->
+            </div> <!-- close .col -->
+
+            <div class="col-xs-6">
+              <div class="form-group">
+                <label for="user_last_name">Last name</label>
+                <input class="form-control" type="text" name="user[last_name]" id="user_last_name">
+              </div> <!-- close .form-group -->
+            </div> <!-- close .col -->
+          </div> <!-- close .row -->
+
+          <div class="form-group">
+            <label for="user_email">
+              Email address
+            </label>
+            <input class="form-control" type="email" value="" name="user[email]" id="user_email" data-cip-id="cIPJQ342845639">
+
+          </div> <!-- close .form-group -->
+
+
+          <div class="form-group">
+            <label for="user_password">
+              Password <span class="text-secondary">(min. 6 char)</span>
+            </label>
+            <input autocomplete="off" class="form-control" required="required" type="password" name="user[password]" id="user_password" data-cip-id="cIPJQ342845640">
+
+          </div> <!-- close .form-group -->
+
+          <div class="form-group">
+            <input type="submit" value="Créer mon compte" class="btn btn-primary">
+          </div> <!-- close .form-group -->
+        </form>
+      </div> <!-- close .form -->
+
+      <div class="sheet sheet--padding-small text-center">
+        <p class="epsilon">Already joined? <a href="/login.html">Login</a></p>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
