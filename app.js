@@ -1,4 +1,5 @@
 var express = require('express');
+var path = require('path');
 var app = express();
 
 // app variables
@@ -11,14 +12,24 @@ app.set('NEO4J_USERNAME', 'app57210483-jgyI3b');
 app.set('NEO4J_PASSWORD', '7HpPCWui68YzQRMgfjuG');
 app.set('NEO4J_URL', 'http://'+app.get('NEO4J_USERNAME')+':'+app.get('NEO4J_PASSWORD')+'@hobby-fplmbomjfhocgbkelakdbenl.dbs.graphenedb.com:24789');
 
-// app routes
-app.get('/', function(req, res) {
+// the app serves files from the public directory
+app.use("/", express.static(path.join(__dirname, 'public')));
+
+// bootstrap stuff
+app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); // redirect bootstrap JS
+app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
+app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css')); // redirect CSS bootstrap
+
+// api routes
+app.get('/api', function(req, res) {
 	res.send("Works");
 });
-
+app.get('/', function(req, res){
+	res.redirect('/login.html')
+})
 
 // start server
 app.listen(app.get('port'), function() {
-	console.log("Running on port ", app.get('port'));
+	console.log("Running on port", app.get('port'));
 });
 
