@@ -58,16 +58,30 @@
 </head>
 <body>
 <div class="wrapper">
-  <form class="form-signin">       
+  <form class="form-signin" id="login">       
     <h2 class="form-signin-heading">Please login</h2>
-    <input type="text" class="form-control" name="username" placeholder="Email Address" required="" autofocus="" />
-    <input type="password" class="form-control" name="password" placeholder="Password" required=""/>      
+    <input id="username" type="text" class="form-control" name="username" placeholder="Email Address" required="" autofocus="" />
+    <input id="password" type="password" class="form-control" name="password" placeholder="Password" required=""/> 
     <button class="btn btn-lg btn-primary btn-block" type="submit">Login</button>
     <div id="new_user" class="pull-right">
-  <a href="/register.html">Register</a>
+  <a href="/register">Register</a>
     </div>
   </form>
   
 </div>
+<script>
+$("#login").submit(function( event ) { // clicking the submit button
+  var get_data = {
+    username: $("#username").val(),
+    password: $("#password").val()
+  };
+  $.get( "/api/checkcredentials", get_data, function( data ) {
+    if (data.accepted) {
+      window.location.replace("/profile/"+data.user_id);
+    }
+  });
+  event.preventDefault();
+});
+</script>
 </body>
 </html>

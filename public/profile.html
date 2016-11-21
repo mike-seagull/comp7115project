@@ -5,6 +5,7 @@
   <script src="/js/bootstrap.min.js"></script>
 </head>
 <body>
+
   <div class="container">
     <header id="header" class="row">
       <div class="col-md-12">
@@ -31,6 +32,13 @@
         </div>
       </nav>
       <section class="col-md-6">
+      <div class="input-group">
+         <input type="text" id="new-post" class="form-control">
+         <span class="input-group-btn">
+              <button id="submit-new-post" class="btn btn-primary" type="button">POST</button>
+         </span>
+      </div>
+
         <div class="media">
           <div class="media-left">
             <a href="#">
@@ -126,4 +134,15 @@
     </footer>
   </div>
 </body>
+<script>
+  var path_params = location.pathname.split("/");
+  if ( path_params[1] == "profile" ) { 
+    var get_data = {
+      user_id: path_params[2]
+    };
+    $.get( "/api/getProfileInfo", get_data, function( data ) {
+      
+    });
+  }
+</script>
 </html>
