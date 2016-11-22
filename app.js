@@ -3,7 +3,7 @@ var path = require('path');
 var app = express();
 var bodyParser = require('body-parser');
 var mysql      = require('mysql');
-
+var neo4j = require('neo4j-driver').v1;
 
 // app variables
 app.set('port', (process.env.PORT || 3000));
@@ -30,6 +30,21 @@ app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); /
 app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css')); // redirect CSS bootstrap
 
+var driver = neo4j.driver('bolt://localhost', neo4j.auth.basic('neo4j', 'ruchinarayan'));
+var session = driver.session();
+
+//sample cypher query for neo4j
+session
+  .run( "CREATE (a:User {user_id:1, first_name:'Ruchi', last_name: 'Yadav', email: 'ruchi@memphis.edu', password: 'ruchi'})" )
+  .then( function()
+  {
+    return session.run( "MATCH (a:User) WHERE a.first_name = 'Ruchi' RETURN a.first_name AS first, a.last_name AS last" )
+  })
+  .then( function( result ) {
+    console.log( result.records[0].get("first") + " " + result.records[0].get("last") );
+    session.close();
+    driver.close();
+  })
 
 function sql_query(select_statement, callback) {
 	var connection = mysql.createConnection({
@@ -147,6 +162,11 @@ app.get('/api/getProfileInfo', function(req, res) {
 			res.send(profile_info);
 		});
 	});
+});
+
+//for Neo4j Connectivity
+app.get('/neo', function(req, res){
+		res.send("Neo4j connectivity");
 });
 // start server
 app.listen(app.get('port'), function() {
