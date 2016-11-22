@@ -1,0 +1,84 @@
+<html>
+<head>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <script src="/js/jquery.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+  <style>
+  #main {
+  	padding: 20px 0px 0px;
+  }
+  </style>
+</head>
+<body>
+<div class="container">
+	<main class="row" id="main">
+        <div class="input-group">
+           <input type="text" id="new-reply" class="form-control">
+           <span class="input-group-btn">
+                <button id="submit-new-reply" class="btn btn-primary" type="button">REPLY</button>
+           </span>
+        </div>
+	</main>
+</div>
+
+<script>
+var path_params = location.pathname.split("/");
+if ( path_params[1] == "reply" ) { 
+	var get_data = {
+		user_id: path_params[2],
+		post_id: path_params[3]
+	};
+	$( '#submit-new-reply' ).on('click', function() {
+		var post_data = get_data;
+		post_data.comment = $( '#new-reply' ).val();
+		$.post('/api/newComment', post_data, function(result) {
+			window.location = "/profile/"+path_params[2];
+		});
+	})
+	$.get( "/api/getPostsForUser", get_data, function( posts ) {
+		var post = posts[0];
+		var posts_div = '<div class="media">';
+		var poster_avatar = '<div class="media-left" id="poster_avatar"><a href="#">';
+		poster_avatar +=      '<img class="media-object" src="https://placeholdit.imgix.net/~text?w=100&amp;h=100&amp;txtsize=22&amp;txt=%5Bimg%5D" alt="Generic placeholder image">';
+		poster_avatar +=    '</a></div>'
+		posts_div += poster_avatar;
+
+		var single_post =   '<div class="media-body"  id="post'+post.post_id+'">';
+		single_post +=        '<h4 class="media-heading" id="post_username">'+post.first_name+' '+post.last_name+'</h4>';
+		single_post +=        '<p id="post_description">'+post.description+'</p><p>';
+		single_post +=      '</p></div>'
+		posts_div += single_post;
+		posts_div +=    "</div>";
+		$( '#main').append(posts_div);
+
+		var get_data2 = {
+			post_id: post.post_id
+		}
+
+		$.get( "/api/getCommentsForPost", get_data2, function( comments ) {
+			if (comments.length > 0) {
+				$( '#post'+get_data2.post_id ).append('<p class="small">'+comments.length+' Comments</p>');
+			}
+			for (var j=0 ; j<comments.length ; j++) {
+				var comment_div =   '<div class="media">';
+				var comment_avatar =  '<div class="media-left">';
+				comment_avatar +=         '<a href="#">';
+				comment_avatar +=           '<img class="media-object" src="https://placeholdit.imgix.net/~text?w=100&amp;h=100&amp;txtsize=22&amp;txt=%5Bimg%5D" alt="Generic placeholder image">';
+				comment_avatar +=         '</a>';
+				comment_avatar +=     '</div>';
+				var comment =         '<div class="media-body">';
+				comment +=              '<h4 class="media-heading" id="commenter_name">'+comments[j].first_name+' '+comments[j].last_name+'</h4>';
+				comment +=              '<p id="comment">'+comments[j].description+'</p>';
+				comment +=            '</div>';
+				comment +=          '</div>';
+				comment_div += comment_avatar;
+				comment_div += comment;
+				comment_div +=      '</div>';
+				$( '#post'+get_data2.post_id ).append(comment_div);
+			}
+		});
+	});
+}
+</script>
+</body>
+</html>
