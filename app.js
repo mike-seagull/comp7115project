@@ -1,9 +1,9 @@
 var express = require('express');
 var path = require('path');
 var app = express();
-var bodyParser = require('body-parser');
-var mysql      = require('mysql');
-
+var bodyParser 	= require('body-parser');
+var mysql      	= require('mysql');
+var cookieParser= require('cookie-parser');
 
 // app variables
 app.set('port', (process.env.PORT || 3000));
@@ -24,12 +24,12 @@ app.use(bodyParser.urlencoded({
     extended: true
 }));
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 // bootstrap stuff
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); // redirect bootstrap JS
 app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css')); // redirect CSS bootstrap
-
 
 function sql_query(select_statement, callback) {
 	var connection = mysql.createConnection({
@@ -53,19 +53,23 @@ function sql_query(select_statement, callback) {
 app.get('/api/checkcredentials', function(req, res) {
 	var username = req.query.username;
 	var password = req.query.password;
-
-	var sql = "SELECT user_id, password FROM user WHERE email = '"+username+"';";
+	var sql = "SELECT user_id, password, first_name, last_name FROM user WHERE email = '"+username+"';";
 	sql_query(sql, function(err, results) {
 		if (err) {
 			res.status(500).send({accepted: false, message: err});
 		}
 		results = results[0];
 		if (password == results.password) {
+			res.cookie('user', results, { maxAge: 600000 });
 			res.send({accepted: true, message: "Credentials accepted.", user_id: results.user_id});
 		} else {
 			res.send({accepted: false, message: "Bad username or password."})
 		}
 	});
+});
+app.delete('/api/sign-out', function(req, res) {
+	res.clearCookie('user');
+	res.send({success: true});
 });
 app.post('/api/register', function(req, res){
 	var first_name = req.body.first;
@@ -77,16 +81,50 @@ app.post('/api/register', function(req, res){
 				"VALUES ('"+first_name+"', '"+last_name+"', '"+email+"', '"+password+"')";
 	sql_query(sql, function(err, results) {
 		if (err) {
-			res.send({accepted: false, message: "ERROR: "+err});
+			res.status(500).send({accepted: false, message: "ERROR: "+err});
 		} else {
 			res.send({accepted: true, message: "Credentials accepted."});
 		}
 	});
 
 });
+app.post('/api/newPost', function(req, res) {
+	var user_id = req.body.user_id;
+	var post = req.body.post;
+
+	var sql = "INSERT INTO post (description, user_id) "+
+				"VALUES ('"+post+"', '"+user_id+"')";
+	sql_query(sql, function(err, results) {
+		if (err) {
+			res.status(500).send({accepted: false, message: err});
+		} else {
+			res.send({accepted: true, message: "Comment accepted"});
+		}
+	})
+});
+app.post('/api/newComment', function(req, res) {
+	var user_id = req.cookies.user.user_id;
+	var post_id = req.body.post_id;
+	var comment = req.body.comment;
+
+	var sql = "INSERT INTO comment (description, user_id, post_id) "+
+				"VALUES ('"+comment+"', '"+user_id+"', '"+post_id+"')";
+	sql_query(sql, function(err, results) {
+		if (err) {
+			res.status(500).send({accepted: false, message: err});
+		} else {
+			res.send({accepted: true, message: "Comment accepted"});
+		}
+	})
+});
 
 app.get('/', function(req, res){
-	res.redirect('/login');
+	console.log(req.cookies);
+	if(req.cookies.user) {
+		 res.redirect('/profile/'+req.cookies.user.user_id);
+	} else {
+		res.redirect('/login');
+	}
 });
 
 app.get('/login', function(req, res) {
@@ -106,6 +144,21 @@ app.get('/register', function(req, res) {
 	}
 	res.sendFile('register.html', options);
 });
+app.get('/api/getSessionInfo', function(req, res) {
+	if (req.cookies.user) {
+		res.send(req.cookies.user);
+	} else {
+		res.send(null);
+	}
+});
+app.get('/reply/:user_id/:post_id', function(req, res) {
+	var options = {
+		root: __dirname + '/public',
+		dotfiles: 'deny',
+		cacheControl: 'false'
+	}
+	res.sendFile('replyToPost.html', options);
+});
 
 app.get('/profile/:user_id', function(req, res) {
 	var options = {
@@ -122,30 +175,34 @@ app.get('/api/getProfileInfo', function(req, res) {
 	var sql = "SELECT first_name, last_name FROM user WHERE user_id = "+user_id+";";
 	sql_query(sql, function(err, results) {
 		if (err) { res.status(500).send(); }
-		results = results[0];
-		profile_info.user_id = user_id;
-		profile_info.first_name = results.first_name;
-		profile_info.last_name = results.last_name;
-
-		var sql = "SELECT post_id, description, like_value FROM post WHERE user_id = "+user_id+" ORDER BY post_id DESC;"
-		sql_query(sql, function(err, posts) {
-			if (err) { res.status(500).send(); }
-			for (var i=0; i < posts.length; i++) {
-				var post_id = posts[i].post_id;
-				var sql = "SELECT c.comment_id AS comment_id, "+
-					"c.description as description, "+
-					"u.user_id AS user_id, "+
-					"u.first_name AS first_name, "+
-					"u.last_name AS last_name"+
-					"FROM comment AS c, user AS u "+
-					"WHERE c.user_id = u.user_id AND c.post_id = "+post_id+";"
-				sql_query(sql, function(err, comments) {
-					posts[i].comments = comments;
-				});
-			}
-			profile_info.posts = posts;
-			res.send(profile_info);
-		});
+		else {
+			var result = results[0];
+			res.send(result);
+		}
+	});
+});
+app.get('/api/getPostsForUser', function(req, res) {
+	var user_id = req.query.user_id;
+	var post_id = req.query.post_id;
+	if (post_id === undefined || post_id === null) {
+		var sql = "SELECT first_name, last_name, post_id, description, like_value FROM post AS p, user AS u WHERE u.user_id = "+user_id+" AND p.user_id = "+user_id+" ORDER BY post_id DESC;";
+	} else {
+		var sql = "SELECT first_name, last_name, post_id, description, like_value FROM post AS p, user AS u WHERE u.user_id = "+user_id+" AND p.user_id = "+user_id+" AND post_id = "+post_id+";";
+	}
+	sql_query(sql, function(err, posts) {
+		if (err) { 
+			res.status(500).send(); 
+		} else { 
+			res.send(posts);
+		}
+	});
+});
+app.get('/api/getCommentsForPost', function(req, res) {
+	var post_id = req.query.post_id;
+	var sql = "SELECT c.comment_id, c.description, u.user_id, u.first_name, u.last_name, c.post_id "+
+		"FROM comment AS c, user AS u WHERE c.user_id = u.user_id AND c.post_id = "+post_id+";"
+	sql_query(sql, function(err, comments) {
+		res.send(comments);
 	});
 });
 // start server
