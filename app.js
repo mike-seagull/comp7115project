@@ -13,6 +13,7 @@ app.set('MYSQL_USERNAME', 'a0i3kvl4stvs4dvh');
 app.set('MYSQL_PASSWORD', 'vyrzttz9k2q9na2r');
 app.set('MYSQL_SCHEMA', 'b6spocrisll4z0jk');
 
+app.set('NEO4J_BOLT', 'bolt://hobby-fplmbomjfhocgbkelakdbenl.dbs.graphenedb.com:24786');
 app.set('NEO4J_USERNAME', 'app57210483-jgyI3b');
 app.set('NEO4J_PASSWORD', '7HpPCWui68YzQRMgfjuG');
 app.set('NEO4J_URL', 'http://'+app.get('NEO4J_USERNAME')+':'+app.get('NEO4J_PASSWORD')+'@hobby-fplmbomjfhocgbkelakdbenl.dbs.graphenedb.com:24789');
@@ -32,7 +33,9 @@ app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); /
 app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css')); // redirect CSS bootstrap
 
-var driver = neo4j.driver('bolt://localhost', neo4j.auth.basic('neo4j', 'ruchinarayan'));
+//var driver = neo4j.driver('bolt://localhost', neo4j.auth.basic('neo4j', 'ruchinarayan'));
+var driver = neo4j.driver(app.get('NEO4J_BOLT'), neo4j.auth.basic(app.get('NEO4J_USERNAME'), app.get('NEO4J_PASSWORD')));
+
 var session = driver.session();
 
 //sample cypher query for neo4j
