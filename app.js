@@ -96,16 +96,22 @@ app.post('/api/register', function(req, res){
 	var last_name = req.body.last;
 	var email = req.body.email;
 	var password = req.body.password;
+	var use_neo4j = req.body.use_neo4j;
 
-	var sql = "INSERT INTO user (first_name, last_name, email, password) "+
-				"VALUES ('"+first_name+"', '"+last_name+"', '"+email+"', '"+password+"')";
-	sql_query(sql, function(err, results) {
-		if (err) {
-			res.status(500).send({accepted: false, message: "ERROR: "+err});
-		} else {
-			res.send({accepted: true, message: "Credentials accepted."});
-		}
-	});
+	if (use_neo4j) {
+	} else {
+		var sql = "INSERT INTO user (first_name, last_name, email, password) "+
+					"VALUES ('"+first_name+"', '"+last_name+"', '"+email+"', '"+password+"')";
+		sql_query(sql, function(err, results) {
+			if (err) {
+				res.status(500).send({accepted: false, message: "ERROR: "+err});
+			} else {
+				res.send({accepted: true, message: "Credentials accepted."});
+			}
+		});
+	}
+
+
 
 });
 app.post('/api/newPost', function(req, res) {
@@ -171,6 +177,7 @@ app.get('/api/getSessionInfo', function(req, res) {
 		res.send(null);
 	}
 });
+
 app.get('/reply/:user_id/:post_id', function(req, res) {
 	var options = {
 		root: __dirname + '/public',
@@ -179,7 +186,14 @@ app.get('/reply/:user_id/:post_id', function(req, res) {
 	}
 	res.sendFile('replyToPost.html', options);
 });
-
+app.get('/main-feed', function(req, res) {
+	var options = {
+		root: __dirname + '/public',
+		dotfiles: 'deny',
+		cacheControl: 'false'
+	}
+	res.sendFile('main.html', options);
+});
 app.get('/profile/:user_id', function(req, res) {
 	var options = {
 		root: __dirname + '/public',
@@ -225,7 +239,14 @@ app.get('/api/getCommentsForPost', function(req, res) {
 		res.send(comments);
 	});
 });
-
+app.get('/api/getFollowerFeed', function(req, res) {
+	var user_id = req.cookies.user.user_id;
+	var sql = "SELECT p.post_id, p.description FROM post p, follower f "+
+		"WHERE f.follower_id = p.user_id AND f.user_id = "+user_id+";";
+	sql_query(sql, function(err, followers_posts) {
+		res.send(followers_posts);
+	});
+});
 //for Neo4j Connectivity
 app.get('/neo', function(req, res){
 		res.send("Neo4j connectivity");
