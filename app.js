@@ -38,6 +38,7 @@ var driver = neo4j.driver(app.get('NEO4J_BOLT'), neo4j.auth.basic(app.get('NEO4J
 var session = driver.session();
 
 //sample cypher query for neo4j
+/*
 session
   .run( "CREATE (a:User {user_id:1, first_name:'Ruchi', last_name: 'Yadav', email: 'ruchi@memphis.edu', password: 'ruchi'})" )
   .then( function()
@@ -49,7 +50,7 @@ session
     session.close();
     driver.close();
   })
-
+*/
 function sql_query(select_statement, callback) {
 	var connection = mysql.createConnection({
   		host     : app.get('MYSQL_HOSTNAME'),
