@@ -68,16 +68,24 @@
 
     </div>
   </div>
+<script type="text/javascript" src="/js/neo4j.js"></script>
 <script>
+var use_neo4j = getParameterByName("useNeo4J");
+if (use_neo4j === undefined || use_neo4j === null) {
+  use_neo4j = false;
+} else {
+  use_neo4j = true;
+}
 $("#register").submit( function( event ) { // clicking the submit button
   var post_data = {
     first: $("#user_first_name").val(),
     last: $("#user_last_name").val(),
     email: $("#user_email").val(),
-    password: $("#user_password").val()
+    password: $("#user_password").val(),
+    useNeo4J: use_neo4j
   };
-  console.log(post_data);
-  $.post('/api/register', post_data, function(data) { 
+
+  $.post('/api/register', post_data, function(data) {
     if (data.accepted) {
       window.location.href = "/login.html";
     }

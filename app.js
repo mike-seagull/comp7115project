@@ -33,7 +33,6 @@ app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); /
 app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css')); // redirect CSS bootstrap
 
-//var driver = neo4j.driver('bolt://localhost', neo4j.auth.basic('neo4j', 'ruchinarayan'));
 var driver = neo4j.driver(app.get('NEO4J_BOLT'), neo4j.auth.basic(app.get('NEO4J_USERNAME'), app.get('NEO4J_PASSWORD')));
 
 var session = driver.session();
@@ -96,9 +95,10 @@ app.post('/api/register', function(req, res){
 	var last_name = req.body.last;
 	var email = req.body.email;
 	var password = req.body.password;
-	var use_neo4j = req.body.use_neo4j;
+	var use_neo4j = req.body.useNeo4J;
 
 	if (use_neo4j) {
+		console.log("Going to use Neo");
 	} else {
 		var sql = "INSERT INTO user (first_name, last_name, email, password) "+
 					"VALUES ('"+first_name+"', '"+last_name+"', '"+email+"', '"+password+"')";
