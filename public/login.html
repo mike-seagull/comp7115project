@@ -69,16 +69,24 @@
   </form>
   
 </div>
+<script type="text/javascript" src="/js/neo4j.js"></script>
 <script>
+var use_neo4j = getParameterByName("useNeo4J");
+if (use_neo4j === undefined || use_neo4j === null) {
+  use_neo4j = false;
+} else {
+  use_neo4j = true;
+}
 $("#login").submit(function( event ) { // clicking the submit button
   var get_data = {
     username: $("#username").val(),
-    password: $("#password").val()
+    password: $("#password").val(),
+    useNeo4J: use_neo4j
   };
   $.get( "/api/checkcredentials", get_data, function( data ) {
     console.log(data)
     if (data.accepted) {
-      window.location.replace("/profile/"+data.user_id);
+      window.location.replace("/main-feed");
     }
   });
   event.preventDefault();
