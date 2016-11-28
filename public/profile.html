@@ -20,24 +20,28 @@
           <a href="#">
             <img src="https://placeholdit.imgix.net/~text?w=300&amp;h=240&amp;txtsize=45&amp;txt=%5Bimg%5D" class="img-responsive" alt="">
           </a>
-          <nav class="nav-pills nav-stacked">
-            <h4><a href="#"> Your name </a></h4>
-            <h4><button class="btn btn-danger" id="sign-out">Sign Out</button></h4>
+          <nav id="nav" class="nav-pills nav-stacked">
+            <!--<h4><button class="btn btn-danger" id="sign-out">Sign Out</button></h4>-->
+            <h4><button class="btn btn-primary" id="follow">Follow</button></h4>
+            <!--
             <h4><a href="#"> Section 2 </a></h4>
             <h4><a href="#"> Section 3 </a></h4>
             <h4><a href="#"> Section 4 </a></h4>
             <h4><a href="#"> Section 5 </a></h4>
             <h4><a href="#"> Section 6 </a></h4>
+            -->
           </nav>
         </div>
       </nav>
       <section class="col-md-6" id="middle-colomn">
+      <!--
         <div class="input-group">
            <input type="text" id="new-post" class="form-control">
            <span class="input-group-btn">
                 <button id="submit-new-post" class="btn btn-primary" type="button">POST</button>
            </span>
         </div>
+        -->
       </section>
       <aside class="col-md-3">
         <img src="https://placeholdit.imgix.net/~text?w=300&amp;h=440&amp;txtsize=65&amp;txt=%5Bads%5D" class="img-responsive" alt="">
@@ -52,18 +56,14 @@
       </div>
       <div class="col-md-6">
         <ul class="nav nav-pills pull-right">
-          <li><a href="#">Section 1</a></li>
-          <li><a href="#">Section 2</a></li>
-          <li><a href="#">Section 3</a></li>
-          <li><a href="#">Section 4</a></li>
-          <li><a href="#">Section 5</a></li>
-          <li><a href="#">Section 6</a></li>
         </ul>
       </div>
     </footer>
   </div>
 </body>
 <script>
+  var path_params = location.pathname.split("/");
+
   $( '#sign-out' ).on('click', function() {
     $.ajax({
       url: "/api/sign-out",
@@ -75,17 +75,69 @@
       }
     });
   });
+  $( '#follow' ).on('click', function() {
+    $.get( "/api/getFollowers", function( followers ) {
+      var isFollowing = false;
+      for (var i=0; i<followers.length;i++) {
+        if (followers[i].follower_id == path_params[2]) {
+          isFollowing = true;
+          break;
+        }
+      }
+      var call_data = {
+        user_id: path_params[2]
+      };
+      if (isFollowing) {
+        $.ajax({
+          url: "/api/unfollowUser",
+          type: "DELETE",
+          data: call_data,
+          success: function(data) {
+            if (data.error == null) {
+              window.location = "/profile/"+call_data.user_id;
+            }
+          }
+        });
+      } else {
+        $.post( '/api/followUser', call_data, function(data) {
+          if (data.error == null) {
+            window.location = "/profile/"+call_data.user_id;
+          }
+        });
+      }
+    });
+  });
   var path_params = location.pathname.split("/");
   if ( path_params[1] == "profile" ) { 
     var get_data = {
       user_id: path_params[2]
     };
+    /*
     $( '#submit-new-post' ).on('click', function() {
       var post_data = get_data;
       post_data.post = $( '#new-post' ).val();
       post_data.comment = $( '#new-post' ).val();
       $.post('/api/newPost', post_data, function(result) {
         window.location = "/profile/"+path_params[2];
+      });
+    });
+    */
+    $.get( "/api/getFollowers", function( followers ) {
+      var isFollowing = false;
+      for (var i=0; i<followers.length;i++) {
+        if (followers[i].follower_id == path_params[2]) {
+          isFollowing = true;
+          break;
+        }
+      }
+      $.get( "/api/getSessionInfo", function( userInfo ) {
+        if (isFollowing) {
+          $( '#follow' ).removeClass('btn-primary');
+          $( '#follow' ).addClass('btn-success');
+          $( '#follow' ).html('Following');
+        } else if ( userInfo.user_id == path_params[2]) {
+          $( '#follow' ).addClass('hidden');
+        }
       });
     });
     $.get( "/api/getProfileInfo", get_data, function( user_info ) {

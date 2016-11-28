@@ -5,7 +5,7 @@ var bodyParser 	= require('body-parser');
 var mysql      	= require('mysql');
 var cookieParser= require('cookie-parser');
 var neo4j = require('neo4j-driver').v1;
-
+var neo4j2 = require('neo4j');
 // app variables
 app.set('port', (process.env.PORT || 3000));
 app.set('MYSQL_HOSTNAME', 'sp6xl8zoyvbumaa2.cbetxkdyhwsb.us-east-1.rds.amazonaws.com');
@@ -17,25 +17,24 @@ app.set('NEO4J_BOLT', 'bolt://hobby-fplmbomjfhocgbkelakdbenl.dbs.graphenedb.com:
 app.set('NEO4J_USERNAME', 'app57210483-jgyI3b');
 app.set('NEO4J_PASSWORD', '7HpPCWui68YzQRMgfjuG');
 app.set('NEO4J_URL', 'http://'+app.get('NEO4J_USERNAME')+':'+app.get('NEO4J_PASSWORD')+'@hobby-fplmbomjfhocgbkelakdbenl.dbs.graphenedb.com:24789');
-
+app.set("AVATAR_DIR", path.join(__dirname, "public", "avatars"));
 // the app serves files from the public directory
 app.use("/", express.static(path.join(__dirname, 'public')));
-
 // body parsers; need these for parsing url-encoded data from post requests
 app.use(bodyParser.urlencoded({
     extended: true
 }));
 app.use(bodyParser.json());
 app.use(cookieParser());
-
 // bootstrap stuff
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); // redirect bootstrap JS
 app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css')); // redirect CSS bootstrap
-
 var driver = neo4j.driver(app.get('NEO4J_BOLT'), neo4j.auth.basic(app.get('NEO4J_USERNAME'), app.get('NEO4J_PASSWORD')));
 
 var session = driver.session();
+
+var db = new neo4j2.GraphDatabase(app.get('NEO4J_URL'));
 
 //sample cypher query for neo4j
 /*
@@ -69,6 +68,9 @@ function sql_query(select_statement, callback) {
 	connection.end();
 }
 
+// from Michael
+// this driver may be a little weird
+// going to write function using a different one
 function cql_query(cql) {
 session
   .run( cql )
@@ -76,13 +78,78 @@ session
   //{
   //  return session.run( "MATCH (a:User) WHERE a.first_name = 'Ruchi' RETURN a.first_name AS first, a.last_name AS last" )
   //})
-  //.then( function( result ) {
+  .then( function( result ) {
   //  console.log( result.records[0].get("first") + " " + result.records[0].get("last") );
     session.close();
     driver.close();
-  })
-
+  });
 }
+
+function neo_query(cql, callback) {
+	db.cypher({query: cql}, function (err, results) {
+    	if (err) {
+    		callback(err, null);
+    	}
+    	callback(results, null);
+	});
+}
+
+// basic routes
+app.get('/', function(req, res){
+	if(req.cookies.user) {
+		 //res.redirect('/profile/'+req.cookies.user.user_id);
+		 res.redirect('/main-feed');
+	} else {
+		res.redirect('/login');
+	}
+});
+
+app.get('/login', function(req, res) {
+	var options = {
+		root: __dirname + '/public',
+		dotfiles: 'deny',
+		cacheControl: 'false'
+	}
+	res.sendFile('login.html', options);
+});
+
+app.get('/register', function(req, res) {
+	var options = {
+		root: __dirname + '/public',
+		dotfiles: 'deny',
+		cacheControl: 'false'
+	}
+	res.sendFile('register.html', options);
+});
+app.get('/main-feed', function(req, res) {
+	var options = {
+		root: __dirname + '/public',
+		dotfiles: 'deny',
+		cacheControl: 'false'
+	}
+	if (req.cookies.user) {
+		res.sendFile('main.html', options);
+	} else {
+		res.redirect('/login');
+	}
+});
+app.get('/reply/:user_id/:post_id', function(req, res) {
+	var options = {
+		root: __dirname + '/public',
+		dotfiles: 'deny',
+		cacheControl: 'false'
+	}
+	res.sendFile('replyToPost.html', options);
+});
+
+app.get('/profile/:user_id', function(req, res) {
+	var options = {
+		root: __dirname + '/public',
+		dotfiles: 'deny',
+		cacheControl: 'false'
+	}
+	res.sendFile('profile.html', options);
+});
 
 // api routes
 app.get('/api/checkcredentials', function(req, res) {
@@ -103,8 +170,11 @@ app.get('/api/checkcredentials', function(req, res) {
 			res.status(500).send({accepted: false, message: err});
 		}
 		results = results[0];
+		results.useNeo4J = true;
 		if (password == results.password) {
+
 			res.cookie('user', results, { maxAge: 600000 });
+
 			res.send({accepted: true, message: "Credentials accepted.", user_id: results.user_id});
 		} else {
 			res.send({accepted: false, message: "Bad username or password."})
@@ -113,6 +183,26 @@ app.get('/api/checkcredentials', function(req, res) {
 	}
 	
 });
+app.get('/uploadAvatar', function(req, res) {
+	var options = {
+		root: __dirname + '/public',
+		dotfiles: 'deny',
+		cacheControl: 'false'
+	}
+	res.sendFile('uploadAvatar.html', options);
+});
+app.post('/uploadAvatar', function(req, res) {
+	var avatar = req.files.avatar;
+	var user_id = req.cookies.user.user_id;
+	fs.rename(avatar.path, path.join(app.get("AVATAR_DIR"), user_id+path.extname(avatar.name)), function (err) {
+		if (err) {
+			res.send({error: err});
+		} else {
+			res.redirect('/profile/')
+		}
+	});
+});
+
 app.delete('/api/sign-out', function(req, res) {
 	res.clearCookie('user');
 	res.send({success: true});
@@ -193,63 +283,12 @@ app.post('/api/newComment', function(req, res) {
 	
 });
 
-app.get('/', function(req, res){
-	console.log(req.cookies);
-	if(req.cookies.user) {
-		 res.redirect('/profile/'+req.cookies.user.user_id);
-	} else {
-		res.redirect('/login');
-	}
-});
-
-app.get('/login', function(req, res) {
-	var options = {
-		root: __dirname + '/public',
-		dotfiles: 'deny',
-		cacheControl: 'false'
-	}
-	res.sendFile('login.html', options);
-});
-
-app.get('/register', function(req, res) {
-	var options = {
-		root: __dirname + '/public',
-		dotfiles: 'deny',
-		cacheControl: 'false'
-	}
-	res.sendFile('register.html', options);
-});
 app.get('/api/getSessionInfo', function(req, res) {
 	if (req.cookies.user) {
 		res.send(req.cookies.user);
 	} else {
 		res.send(null);
 	}
-});
-
-app.get('/reply/:user_id/:post_id', function(req, res) {
-	var options = {
-		root: __dirname + '/public',
-		dotfiles: 'deny',
-		cacheControl: 'false'
-	}
-	res.sendFile('replyToPost.html', options);
-});
-app.get('/main-feed', function(req, res) {
-	var options = {
-		root: __dirname + '/public',
-		dotfiles: 'deny',
-		cacheControl: 'false'
-	}
-	res.sendFile('main.html', options);
-});
-app.get('/profile/:user_id', function(req, res) {
-	var options = {
-		root: __dirname + '/public',
-		dotfiles: 'deny',
-		cacheControl: 'false'
-	}
-	res.sendFile('profile.html', options);
 });
 
 app.get('/api/getProfileInfo', function(req, res) {
@@ -283,20 +322,23 @@ app.get('/api/getPostsForUser', function(req, res) {
 	if (use_neo4j) {
 		//console.log("Going to use Neo");
 	}
-	else
-	{
+	else {
 		if (post_id === undefined || post_id === null) {
-		var sql = "SELECT first_name, last_name, post_id, description, like_value FROM post AS p, user AS u WHERE u.user_id = "+user_id+" AND p.user_id = "+user_id+" ORDER BY post_id DESC;";
-	} else {
-		var sql = "SELECT first_name, last_name, post_id, description, like_value FROM post AS p, user AS u WHERE u.user_id = "+user_id+" AND p.user_id = "+user_id+" AND post_id = "+post_id+";";
-	}
-	sql_query(sql, function(err, posts) {
-		if (err) { 
-			res.status(500).send(); 
-		} else { 
-			res.send(posts);
+			var sql = "SELECT first_name, last_name, post_id, description, like_value "+
+				"FROM post AS p, user AS u "+
+				"WHERE u.user_id = "+user_id+" AND p.user_id = "+user_id+" ORDER BY post_id DESC;";
+		} else {
+			var sql = "SELECT first_name, last_name, post_id, description, like_value "+
+				"FROM post AS p, user AS u "+
+				"WHERE u.user_id = "+user_id+" AND p.user_id = "+user_id+" AND post_id = "+post_id+";";
 		}
-	});
+		sql_query(sql, function(err, posts) {
+			if (err) { 
+				res.status(500).send(); 
+			} else { 
+				res.send(posts);
+			}
+		});
 	}
 	
 });
@@ -325,14 +367,53 @@ app.get('/api/getFollowerFeed', function(req, res) {
 	if (use_neo4j) {
 		console.log("Going to use Neo");
 	}
-	else
-	{
-	var sql = "SELECT p.post_id, p.description FROM post p, follower f "+
-		"WHERE f.follower_id = p.user_id AND f.user_id = "+user_id+";";
-	sql_query(sql, function(err, followers_posts) {
-		res.send(followers_posts);
-	});
+	else {
+		var sql = "SELECT p.post_id, p.description, u.first_name, u.last_name, f.follower_id "+
+			"FROM post p, follower f, user u "+
+			"WHERE f.follower_id = p.user_id AND f.follower_id = u.user_id AND f.user_id = "+user_id+";";
+		sql_query(sql, function(err, followers_posts) {
+			res.send(followers_posts);
+		});
 	}
+});
+app.get('/api/getFollowers', function(req, res) {
+	var user_id = req.cookies.user.user_id;
+	if (user_id === undefined || user_id === null) {
+		res.send({err: "not logged in"})
+	}
+	var sql = "SELECT follower_id FROM follower WHERE user_id = "+user_id+";";
+	sql_query(sql, function(err, followers) {
+		followers.err = null;
+		res.send(followers);
+	});
+});
+app.post('/api/followUser', function(req, res) {
+	var user_id = req.cookies.user.user_id;
+	var follower_id = req.body.user_id;
+	if (user_id === 0 || follower_id === 0) {
+		res.send({error: "error getting user_id or follower_id"});
+	}
+	var sql = "INSERT INTO follower (user_id, follower_id) "+
+		"VALUES ('"+user_id+"', '"+follower_id+"');";
+	sql_query(sql, function(err, data) {
+		res.send({error: null});
+	});
+});
+app.delete('/api/unfollowUser', function(req, res) {
+	var user_id = req.cookies.user.user_id;
+	var follower_id = req.body.user_id;
+	var sql = "DELETE from follower "+
+		"WHERE user_id = "+user_id+" AND follower_id = "+follower_id+";"
+	console.log(sql);
+	sql_query(sql, function(err, data) {
+		if (err) {
+			res.send({error: err});
+		} else {
+			res.send({error: null});
+		}
+	});
+
+
 });
 //for Neo4j Connectivity
 app.get('/neo', function(req, res){
