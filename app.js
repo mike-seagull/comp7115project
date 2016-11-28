@@ -69,10 +69,34 @@ function sql_query(select_statement, callback) {
 	connection.end();
 }
 
+function cql_query(cql) {
+session
+  .run( cql )
+  //.then( function()
+  //{
+  //  return session.run( "MATCH (a:User) WHERE a.first_name = 'Ruchi' RETURN a.first_name AS first, a.last_name AS last" )
+  //})
+  //.then( function( result ) {
+  //  console.log( result.records[0].get("first") + " " + result.records[0].get("last") );
+    session.close();
+    driver.close();
+  })
+
+}
+
 // api routes
 app.get('/api/checkcredentials', function(req, res) {
 	var username = req.query.username;
 	var password = req.query.password;
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
+
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+		var sql = "MATCH (usr: User) WHERE usr.email = \""+username+"\" RETURN usr.first_name, usr.last_name, usr.password";
+	}
+	else
+	{
 	var sql = "SELECT user_id, password, first_name, last_name FROM user WHERE email = '"+username+"';";
 	sql_query(sql, function(err, results) {
 		if (err) {
@@ -86,6 +110,8 @@ app.get('/api/checkcredentials', function(req, res) {
 			res.send({accepted: false, message: "Bad username or password."})
 		}
 	});
+	}
+	
 });
 app.delete('/api/sign-out', function(req, res) {
 	res.clearCookie('user');
@@ -97,9 +123,12 @@ app.post('/api/register', function(req, res){
 	var email = req.body.email;
 	var password = req.body.password;
 	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
 
 	if (use_neo4j) {
 		console.log("Going to use Neo");
+		var sql = "CREATE (a:User {first_name: \""+first_name+"\", last_name: \""+last_name+"\", email: \""+email+"\", password: \""+password+"\"})";
+		cql_query(sql);
 	} else {
 		var sql = "INSERT INTO user (first_name, last_name, email, password) "+
 					"VALUES ('"+first_name+"', '"+last_name+"', '"+email+"', '"+password+"')";
@@ -118,7 +147,15 @@ app.post('/api/register', function(req, res){
 app.post('/api/newPost', function(req, res) {
 	var user_id = req.body.user_id;
 	var post = req.body.post;
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
 
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+		var sql = "CREATE (a:Post {description: \""+post+"\", user_id: "+user_id+"})";
+	}
+	else
+	{
 	var sql = "INSERT INTO post (description, user_id) "+
 				"VALUES ('"+post+"', '"+user_id+"')";
 	sql_query(sql, function(err, results) {
@@ -128,12 +165,21 @@ app.post('/api/newPost', function(req, res) {
 			res.send({accepted: true, message: "Comment accepted"});
 		}
 	})
+	}
 });
 app.post('/api/newComment', function(req, res) {
 	var user_id = req.cookies.user.user_id;
 	var post_id = req.body.post_id;
 	var comment = req.body.comment;
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
 
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+		var sql = "CREATE (a:Comment {description: \""+comment+"\", user_id: "+user_id+", post_id: "+post_id+"})";
+	}
+	else
+	{
 	var sql = "INSERT INTO comment (description, user_id, post_id) "+
 				"VALUES ('"+comment+"', '"+user_id+"', '"+post_id+"')";
 	sql_query(sql, function(err, results) {
@@ -143,6 +189,8 @@ app.post('/api/newComment', function(req, res) {
 			res.send({accepted: true, message: "Comment accepted"});
 		}
 	})
+	}
+	
 });
 
 app.get('/', function(req, res){
@@ -207,6 +255,15 @@ app.get('/profile/:user_id', function(req, res) {
 app.get('/api/getProfileInfo', function(req, res) {
 	var user_id = req.query.user_id;
 	var profile_info = {};
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
+
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+		var sql = "MATCH (usr: User) WHERE usr.user_id = \""+user_id+"\" RETURN usr.first_name, usr.last_name";
+	}
+	else
+	{
 	var sql = "SELECT first_name, last_name FROM user WHERE user_id = "+user_id+";";
 	sql_query(sql, function(err, results) {
 		if (err) { res.status(500).send(); }
@@ -215,11 +272,20 @@ app.get('/api/getProfileInfo', function(req, res) {
 			res.send(result);
 		}
 	});
+	}
 });
 app.get('/api/getPostsForUser', function(req, res) {
 	var user_id = req.query.user_id;
 	var post_id = req.query.post_id;
-	if (post_id === undefined || post_id === null) {
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
+
+	if (use_neo4j) {
+		//console.log("Going to use Neo");
+	}
+	else
+	{
+		if (post_id === undefined || post_id === null) {
 		var sql = "SELECT first_name, last_name, post_id, description, like_value FROM post AS p, user AS u WHERE u.user_id = "+user_id+" AND p.user_id = "+user_id+" ORDER BY post_id DESC;";
 	} else {
 		var sql = "SELECT first_name, last_name, post_id, description, like_value FROM post AS p, user AS u WHERE u.user_id = "+user_id+" AND p.user_id = "+user_id+" AND post_id = "+post_id+";";
@@ -231,22 +297,42 @@ app.get('/api/getPostsForUser', function(req, res) {
 			res.send(posts);
 		}
 	});
+	}
+	
 });
 app.get('/api/getCommentsForPost', function(req, res) {
 	var post_id = req.query.post_id;
-	var sql = "SELECT c.comment_id, c.description, u.user_id, u.first_name, u.last_name, c.post_id "+
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
+
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+	}
+	else
+	{
+		var sql = "SELECT c.comment_id, c.description, u.user_id, u.first_name, u.last_name, c.post_id "+
 		"FROM comment AS c, user AS u WHERE c.user_id = u.user_id AND c.post_id = "+post_id+";"
 	sql_query(sql, function(err, comments) {
 		res.send(comments);
 	});
+	}
 });
 app.get('/api/getFollowerFeed', function(req, res) {
 	var user_id = req.cookies.user.user_id;
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
+
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+	}
+	else
+	{
 	var sql = "SELECT p.post_id, p.description FROM post p, follower f "+
 		"WHERE f.follower_id = p.user_id AND f.user_id = "+user_id+";";
 	sql_query(sql, function(err, followers_posts) {
 		res.send(followers_posts);
 	});
+	}
 });
 //for Neo4j Connectivity
 app.get('/neo', function(req, res){
