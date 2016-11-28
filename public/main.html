@@ -1,0 +1,161 @@
+<html>
+<head>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <script src="/js/jquery.min.js"></script>
+  <script src="/js/bootstrap.min.js"></script>
+</head>
+<body>
+
+  <div class="container">
+    <header id="header" class="row">
+      <div class="col-md-12">
+        <div class="well">
+          <h1 id="greeting">Feed Template</h1>
+        </div>
+      </div>
+    </header>
+    <main class="row">
+      <nav class="col-md-3">
+        <div class="well">
+          <a href="#">
+            <img src="https://placeholdit.imgix.net/~text?w=300&amp;h=240&amp;txtsize=45&amp;txt=%5Bimg%5D" class="img-responsive" alt="">
+          </a>
+          <nav class="nav-pills nav-stacked">
+            <h4 id="myprofile"></h4>
+            <h4><button class="btn btn-danger" id="sign-out">Sign Out</button></h4>
+          </nav>
+        </div>
+      </nav>
+      <section class="col-md-6" id="middle-colomn">
+        <div class="input-group">
+           <input type="text" id="new-post" class="form-control">
+           <span class="input-group-btn">
+                <button id="submit-new-post" class="btn btn-primary" type="button">POST</button>
+           </span>
+        </div>
+      </section>
+      <aside class="col-md-3">
+        <img src="https://placeholdit.imgix.net/~text?w=300&amp;h=440&amp;txtsize=65&amp;txt=%5Bads%5D" class="img-responsive" alt="">
+        <br>
+        <img src="https://placeholdit.imgix.net/~text?w=300&amp;h=440&amp;txtsize=65&amp;txt=%5Bads%5D" class="img-responsive" alt="">
+      </aside>
+    </main>
+    <hr>
+    <footer class="row">
+      <div class="col-md-6">
+        <p>© Copyright no one at all. Go to town.</p>
+      </div>
+      <div class="col-md-6">
+        <ul class="nav nav-pills pull-right">
+          <li><a href="#">Section 1</a></li>
+          <li><a href="#">Section 2</a></li>
+          <li><a href="#">Section 3</a></li>
+          <li><a href="#">Section 4</a></li>
+          <li><a href="#">Section 5</a></li>
+          <li><a href="#">Section 6</a></li>
+        </ul>
+      </div>
+    </footer>
+  </div>
+</body>
+<script>
+  $.get( '/api/getSessionInfo', function(userInfo) {
+    $( '#greeting' ).html( "Hello " + userInfo.first_name + " " + userInfo.last_name );
+    $( '#myprofile' ).html( '<a href="/profile/'+userInfo.user_id+'">'+userInfo.first_name+' '+userInfo.last_name+'</a>' );
+    $.get( '/api/getFollowerFeed', function(posts){
+      for (var i=0; i<posts.length; i++) {
+        var posts_div = '<div class="media">';
+        var poster_avatar = '<div class="media-left" id="poster_avatar"><a href="#">';
+        poster_avatar +=      '<img class="media-object" src="https://placeholdit.imgix.net/~text?w=100&amp;h=100&amp;txtsize=22&amp;txt=%5Bimg%5D" alt="Generic placeholder image">';
+        poster_avatar +=    '</a></div>'
+        posts_div += poster_avatar;
+
+        var single_post =   '<div class="media-body"  id="post'+posts[i].post_id+'">';
+        single_post +=        '<h4 class="media-heading" id="post_username"><a href="/profile/'+posts[i].follower_id+'">'+posts[i].first_name+' '+posts[i].last_name+'</a></h4>';
+        single_post +=        '<p id="post_description">'+posts[i].description+'</p><p>';
+        var reply =           '<a href="/reply/'+posts[i].post_id+'" id="reply'+posts[i].post_id+'">Reply</a>';
+        //single_post +=        reply;
+        single_post +=      '</p></div>'
+        posts_div += single_post;
+        posts_div +=    "</div>";
+        $( '#middle-colomn').append(posts_div);
+      }
+    });
+  });
+  $( '#sign-out' ).on('click', function() {
+    $.ajax({
+      url: "/api/sign-out",
+      type: "DELETE",
+      success: function(data) {
+        if (data.success) {
+          window.location = "/";
+        }
+      }
+    });
+  });
+  /*
+  var path_params = location.pathname.split("/");
+  if ( path_params[1] == "profile" ) { 
+    var get_data = {
+      user_id: path_params[2]
+    };
+    $( '#submit-new-post' ).on('click', function() {
+      var post_data = get_data;
+      post_data.post = $( '#new-post' ).val();
+      post_data.comment = $( '#new-post' ).val();
+      $.post('/api/newPost', post_data, function(result) {
+        window.location = "/profile/"+path_params[2];
+      });
+    });
+    $.get( "/api/getProfileInfo", get_data, function( user_info ) {
+      $( '#greeting' ).html( "Hello " + user_info.first_name + " " + user_info.last_name );
+    });
+    $.get( "/api/getPostsForUser", get_data, function( posts ) {
+      for (var i=0; i<posts.length ; i++) {
+        var posts_div = '<div class="media">';
+        var poster_avatar = '<div class="media-left" id="poster_avatar"><a href="#">';
+        poster_avatar +=      '<img class="media-object" src="https://placeholdit.imgix.net/~text?w=100&amp;h=100&amp;txtsize=22&amp;txt=%5Bimg%5D" alt="Generic placeholder image">';
+        poster_avatar +=    '</a></div>'
+        posts_div += poster_avatar;
+
+        var single_post =   '<div class="media-body"  id="post'+posts[i].post_id+'">';
+        single_post +=        '<h4 class="media-heading" id="post_username">'+posts[i].first_name+' '+posts[i].last_name+'</h4>';
+        single_post +=        '<p id="post_description">'+posts[i].description+'</p><p>';
+        var reply =           '<a href="/reply/'+path_params[2]+'/'+posts[i].post_id+'" id="reply'+posts[i].post_id+'">Reply</a>';
+        single_post +=        reply;
+        single_post +=      '</p></div>'
+        posts_div += single_post;
+        posts_div +=    "</div>";
+        $( '#middle-colomn').append(posts_div);
+
+        var get_data2 = {
+          post_id: posts[i].post_id
+        }
+        $.get( "/api/getCommentsForPost", get_data2, function( comments ) {
+          if (comments.length > 0) {
+            $( '#post'+comments[0].post_id ).append('<p class="small">'+comments.length+' Comments</p>');
+          }
+          for (var j=0 ; j<comments.length ; j++) {
+            var comment_div =   '<div class="media">';
+            var comment_avatar =  '<div class="media-left">';
+            comment_avatar +=         '<a href="#">';
+            comment_avatar +=           '<img class="media-object" src="https://placeholdit.imgix.net/~text?w=100&amp;h=100&amp;txtsize=22&amp;txt=%5Bimg%5D" alt="Generic placeholder image">';
+            comment_avatar +=         '</a>';
+            comment_avatar +=     '</div>';
+            var comment =         '<div class="media-body">';
+            comment +=              '<h4 class="media-heading" id="commenter_name">'+comments[j].first_name+' '+comments[j].last_name+'</h4>';
+            comment +=              '<p id="comment">'+comments[j].description+'</p>';
+            comment +=            '</div>';
+            comment +=          '</div>';
+            comment_div += comment_avatar;
+            comment_div += comment;
+            comment_div +=      '</div>';
+            $( '#post'+comments[j].post_id ).append(comment_div);
+          }
+        });
+      }
+    });
+  }
+  */
+</script>
+</html>
