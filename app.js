@@ -158,11 +158,7 @@ app.get('/api/checkcredentials', function(req, res) {
 	var username = req.query.username;
 	var password = req.query.password;
 	var use_neo4j = req.query.useNeo4J;
-<<<<<<< HEAD
-=======
 	console.log(use_neo4j);
->>>>>>> 1eff2ee8958ad620b040c29a1186c4b080714e10
-
 	if (use_neo4j == true) {
 		console.log("Going to use Neo");
 		var sql = "MATCH (usr: User) WHERE usr.email = \""+username+"\" RETURN usr.first_name, usr.last_name, usr.password";
