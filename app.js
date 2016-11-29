@@ -421,6 +421,14 @@ app.get('/api/getMainFeed', function(req, res) {
 });
 app.get('/api/getFollowers', function(req, res) {
 	var user_id = req.query.user_id || req.cookies.user.user_id;
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
+
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+	}
+	else
+	{
 	if (user_id === undefined || user_id === null) {
 		res.send({err: "not logged in"})
 	}
@@ -429,18 +437,37 @@ app.get('/api/getFollowers', function(req, res) {
 		followers["err"] = null;
 		res.send(followers);
 	});
+	}
 });
 app.get('/api/getFollowing', function(req, res) {
 	var user_id = req.query.user_id || req.cookies.user.user_id;
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
+
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+	}
+	else
+	{
 	var sql = "SELECT user_id FROM follower WHERE follower_id = "+user_id+";";
 	sql_query(sql, function(err, following) {
 		following["err"] = null;
 		res.send(following);
 	});
+	}
+	
 });
 app.post('/api/followUser', function(req, res) {
 	var follower_id = req.cookies.user.user_id;
 	var user_id = req.body.user_id;
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
+
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+	}
+	else
+	{
 	if (user_id === 0 || follower_id === 0) {
 		res.send({error: "error getting user_id or follower_id"});
 	}
@@ -449,11 +476,20 @@ app.post('/api/followUser', function(req, res) {
 	sql_query(sql, function(err, data) {
 		res.send({error: null});
 	});
+	}
 });
 app.delete('/api/unfollowUser', function(req, res) {
 	var follower_id = req.cookies.user.user_id;
 	var user_id = req.body.user_id;
-	var sql = "DELETE from follower "+
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
+
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+	}
+	else
+	{
+		var sql = "DELETE from follower "+
 		"WHERE user_id = "+user_id+" AND follower_id = "+follower_id+";"
 	sql_query(sql, function(err, data) {
 		if (err) {
@@ -462,9 +498,19 @@ app.delete('/api/unfollowUser', function(req, res) {
 			res.send({error: null});
 		}
 	});
+	}
+	
 });
 app.post('/api/likePost', function(req, res) {
 	var post_id = req.body.post_id;
+	var use_neo4j = req.body.useNeo4J;
+	//var use_neo4j = true;
+
+	if (use_neo4j) {
+		console.log("Going to use Neo");
+	}
+	else
+	{
 	var sql = "UPDATE post SET like_value = like_value + 1 WHERE post_id = "+post_id+";";
 	sql_query(sql, function(err, data) {
 		if (err) {
@@ -473,6 +519,8 @@ app.post('/api/likePost', function(req, res) {
 			res.send({error: null});
 		}	
 	});
+	}
+	
 });
 //for Neo4j Connectivity
 app.get('/neo', function(req, res){
