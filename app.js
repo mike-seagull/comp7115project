@@ -147,7 +147,7 @@ app.get('/profile/:user_id', function(req, res) {
 		root: __dirname + '/public',
 		dotfiles: 'deny',
 		cacheControl: 'false'
-	}
+	}	
 	res.sendFile('profile.html', options);
 });
 
@@ -161,6 +161,7 @@ app.get('/api/checkcredentials', function(req, res) {
 	if (use_neo4j) {
 		console.log("Going to use Neo");
 		var sql = "MATCH (usr: User) WHERE usr.email = \""+username+"\" RETURN usr.first_name, usr.last_name, usr.password";
+	
 	}
 	else
 	{
@@ -218,7 +219,13 @@ app.post('/api/register', function(req, res){
 	if (use_neo4j) {
 		console.log("Going to use Neo");
 		var sql = "CREATE (a:User {first_name: \""+first_name+"\", last_name: \""+last_name+"\", email: \""+email+"\", password: \""+password+"\"})";
-		cql_query(sql);
+		neo_query(sql, function(err, results){
+			if(err) {
+				res.status(500).send({accepted: false, message: "ERROR: "+err});
+			} else {
+				res.send({accepted: true, message: "Credentials accepted."});
+			}
+		});
 	} else {
 		var sql = "INSERT INTO user (first_name, last_name, email, password) "+
 					"VALUES ('"+first_name+"', '"+last_name+"', '"+email+"', '"+password+"')";
