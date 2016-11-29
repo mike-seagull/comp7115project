@@ -163,19 +163,6 @@ app.get('/api/checkcredentials', function(req, res) {
 	if (use_neo4j == true) {
 		console.log("Going to use Neo");
 		var sql = "MATCH (usr: User) WHERE usr.email = \""+username+"\" RETURN usr.first_name, usr.last_name, usr.password";
-
-	}
-	else
-	{
-	var sql = "SELECT user_id, password, first_name, last_name FROM user WHERE email = '"+username+"';";
-	sql_query(sql, function(err, results) {
-		if (err) {
-			res.status(500).send({accepted: false, message: err});
-		}
-		results = results[0];
-		results.useNeo4J = true;
-		if (password == results.password) {
-
 		neo_query(sql, function(err, results) {
 			if (err) {
 				res.status(500).send({accepted: false, message: err});
@@ -186,7 +173,7 @@ app.get('/api/checkcredentials', function(req, res) {
 			} else {
 				res.send({accepted: false, message: "Bad username or password."})
 			}
-		})
+		});
 	} else {
 		var sql = "SELECT user_id, password, first_name, last_name FROM user WHERE email = '"+username+"';";
 		sql_query(sql, function(err, results) {
@@ -205,7 +192,6 @@ app.get('/api/checkcredentials', function(req, res) {
 			}
 		});
 	}
-	
 });
 app.get('/uploadAvatar', function(req, res) {
 	var options = {
@@ -260,9 +246,6 @@ app.post('/api/register', function(req, res){
 			}
 		});
 	}
-
-
-
 });
 app.post('/api/newPost', function(req, res) {
 	var user_id = req.body.user_id;
@@ -276,15 +259,15 @@ app.post('/api/newPost', function(req, res) {
 	}
 	else
 	{
-	var sql = "INSERT INTO post (description, user_id) "+
-				"VALUES ('"+post+"', '"+user_id+"')";
-	sql_query(sql, function(err, results) {
-		if (err) {
-			res.status(500).send({accepted: false, message: err});
-		} else {
-			res.send({accepted: true, message: "Comment accepted"});
-		}
-	})
+		var sql = "INSERT INTO post (description, user_id) "+
+					"VALUES ('"+post+"', '"+user_id+"')";
+		sql_query(sql, function(err, results) {
+			if (err) {
+				res.status(500).send({accepted: false, message: err});
+			} else {
+				res.send({accepted: true, message: "Comment accepted"});
+			}
+		})
 	}
 });
 app.post('/api/newComment', function(req, res) {
@@ -297,20 +280,17 @@ app.post('/api/newComment', function(req, res) {
 	if (use_neo4j) {
 		console.log("Going to use Neo");
 		var sql = "CREATE (a:Comment {description: \""+comment+"\", user_id: "+user_id+", post_id: "+post_id+"})";
+	} else {
+		var sql = "INSERT INTO comment (description, user_id, post_id) "+
+					"VALUES ('"+comment+"', '"+user_id+"', '"+post_id+"')";
+		sql_query(sql, function(err, results) {
+			if (err) {
+				res.status(500).send({accepted: false, message: err});
+			} else {
+				res.send({accepted: true, message: "Comment accepted"});
+			}
+		})
 	}
-	else
-	{
-	var sql = "INSERT INTO comment (description, user_id, post_id) "+
-				"VALUES ('"+comment+"', '"+user_id+"', '"+post_id+"')";
-	sql_query(sql, function(err, results) {
-		if (err) {
-			res.status(500).send({accepted: false, message: err});
-		} else {
-			res.send({accepted: true, message: "Comment accepted"});
-		}
-	})
-	}
-	
 });
 
 app.get('/api/getSessionInfo', function(req, res) {
