@@ -90,9 +90,10 @@ function neo_query(cql, callback) {
     	if (err) {
     		callback(err, null);
     	}
-    	callback(results, null);
+    	callback(null, results);
 	});
 }
+
 
 // basic routes
 app.get('/', function(req, res){
@@ -155,12 +156,14 @@ app.get('/profile/:user_id', function(req, res) {
 app.get('/api/checkcredentials', function(req, res) {
 	var username = req.query.username;
 	var password = req.query.password;
-	var use_neo4j = req.body.useNeo4J;
+	var use_neo4j = req.query.useNeo4J;
+	console.log(use_neo4j);
 	//var use_neo4j = true;
 
-	if (use_neo4j) {
+	if (use_neo4j == true) {
 		console.log("Going to use Neo");
 		var sql = "MATCH (usr: User) WHERE usr.email = \""+username+"\" RETURN usr.first_name, usr.last_name, usr.password";
+<<<<<<< HEAD
 	
 	}
 	else
@@ -173,14 +176,36 @@ app.get('/api/checkcredentials', function(req, res) {
 		results = results[0];
 		results.useNeo4J = true;
 		if (password == results.password) {
+=======
+		neo_query(sql, function(err, results) {
+			if (err) {
+				res.status(500).send({accepted: false, message: err});
+			} 
+			if (password == results.password) {
+				res.cookie('user', results, { maxAge: 600000 });
+				res.send({accepted: true, message: "Credentials accepted.", user_id: results.user_id});
+			} else {
+				res.send({accepted: false, message: "Bad username or password."})
+			}
+		})
+	} else {
+		var sql = "SELECT user_id, password, first_name, last_name FROM user WHERE email = '"+username+"';";
+		sql_query(sql, function(err, results) {
+			if (err) {
+				res.status(500).send({accepted: false, message: err});
+			}
+			results = results[0];
+			results.useNeo4J = false;
+			if (password == results.password) {
+>>>>>>> b92f740d6019218fd6c047cd66271d7a24279900
 
-			res.cookie('user', results, { maxAge: 600000 });
+				res.cookie('user', results, { maxAge: 600000 });
 
-			res.send({accepted: true, message: "Credentials accepted.", user_id: results.user_id});
-		} else {
-			res.send({accepted: false, message: "Bad username or password."})
-		}
-	});
+				res.send({accepted: true, message: "Credentials accepted.", user_id: results.user_id});
+			} else {
+				res.send({accepted: false, message: "Bad username or password."})
+			}
+		});
 	}
 	
 });
@@ -366,7 +391,7 @@ app.get('/api/getCommentsForPost', function(req, res) {
 	});
 	}
 });
-app.get('/api/getFollowerFeed', function(req, res) {
+app.get('/api/getMainFeed', function(req, res) {
 	var user_id = req.cookies.user.user_id;
 	var use_neo4j = req.body.useNeo4J;
 	//var use_neo4j = true;
@@ -375,9 +400,12 @@ app.get('/api/getFollowerFeed', function(req, res) {
 		console.log("Going to use Neo");
 	}
 	else {
-		var sql = "SELECT p.post_id, p.description, u.first_name, u.last_name, f.follower_id "+
-			"FROM post p, follower f, user u "+
-			"WHERE f.follower_id = p.user_id AND f.follower_id = u.user_id AND f.user_id = "+user_id+";";
+		var sql = "SELECT p.post_id, p.description, u.first_name, u.last_name, f.follower_id AS user_id "+
+			"FROM post p "+
+			"JOIN follower f ON p.user_id=f.follower_id "+
+			"JOIN user u ON f.follower_id = u.user_id "+
+			"WHERE f.user_id = "+user_id+" OR p.user_id = "+user_id+
+			" ORDER BY post_id DESC;"
 		sql_query(sql, function(err, followers_posts) {
 			res.send(followers_posts);
 		});
