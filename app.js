@@ -6,6 +6,9 @@ var mysql      	= require('mysql');
 var cookieParser= require('cookie-parser');
 var neo4j = require('neo4j-driver').v1;
 var neo4j2 = require('neo4j');
+var formidable = require('formidable');
+var fs = require('fs');
+
 // app variables
 app.set('port', (process.env.PORT || 3000));
 app.set('MYSQL_HOSTNAME', 'sp6xl8zoyvbumaa2.cbetxkdyhwsb.us-east-1.rds.amazonaws.com');
@@ -192,7 +195,7 @@ app.get('/api/checkcredentials', function(req, res) {
 		});
 	}
 });
-app.get('/uploadAvatar', function(req, res) {
+app.get('/upload-avatar', function(req, res) {
 	var options = {
 		root: __dirname + '/public',
 		dotfiles: 'deny',
@@ -200,18 +203,42 @@ app.get('/uploadAvatar', function(req, res) {
 	}
 	res.sendFile('uploadAvatar.html', options);
 });
-app.post('/uploadAvatar', function(req, res) {
-	var avatar = req.files.avatar;
+app.post('/api/upload-avatar', function(req, res) {
 	var user_id = req.cookies.user.user_id;
-	fs.rename(avatar.path, path.join(app.get("AVATAR_DIR"), user_id+path.extname(avatar.name)), function (err) {
+	var form = new formidable.IncomingForm();
+	form.multiples = false;
+	form.uploadDir = app.get("AVATAR_DIR");
+
+	form.on('file', function(field, file) {
+		fs.rename(file.path, path.join(form.uploadDir, user_id.toString()));
+	});
+
+	// log any errors that occur
+	form.on('error', function(err) {
+		res.status(500).send({error: err});
+	});
+
+	// once all the files have been uploaded, send a response to the client
+	form.on('end', function() {
+		res.redirect('/profile/'+user_id.toString());
+	});
+
+	// parse the incoming request containing the form data
+	form.parse(req);
+});
+app.get('/api/getAvatar', function(req, res) {
+	var user_id = req.cookies.user.user_id;
+	var avatar_path = path.join(app.get("AVATAR_DIR"), user_id.toString());
+	fs.readFile(avatar_path, function(err, data) {
 		if (err) {
-			res.send({error: err});
-		} else {
-			res.redirect('/profile/')
+			// file doesnt exist
+			res.send({avatar_exists: false});
+		}else {
+			// file exists
+			res.send({avatar_exists: true});
 		}
 	});
-});
-
+})
 app.delete('/api/sign-out', function(req, res) {
 	res.clearCookie('user');
 	res.send({success: true});
