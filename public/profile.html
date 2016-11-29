@@ -170,10 +170,24 @@
       });
     });
     $.get( "/api/getProfileInfo", get_data, function( user_info ) {
-      $( '#greeting' ).html( "Hello " + user_info.first_name + " " + user_info.last_name );
+      $( '#greeting' ).html( user_info.first_name + " " + user_info.last_name + "'s Profile");
     });
     $.get( "/api/getPostsForUser", get_data, function( posts ) {
       for (var i=0; i<posts.length ; i++) {
+        $.get('/api/getAvatar', {user_id: path_params[2]}, function(data) {
+          $.get('/api/getSessionInfo', function(userInfo){
+            var image_src = ""
+            if (data.avatar_exists == true) {
+              image_src = "/avatars/"+path_params[2];
+            }else {
+              image_src = 'https://placeholdit.imgix.net/~text?w=300&amp;h=240&amp;txtsize=45&amp;txt=%5Bimg%5D';
+            }
+            $( '#avatar' ).html('<img height="240" width="300" src="'+image_src+'" class="img-responsive">');
+            if (userInfo.user_id == path_params[2]) {
+              $( '#avatar' ).attr('href', '/upload-avatar');
+            }
+          });
+        });
         var posts_div = '<div class="media">';
         var poster_avatar = '<div class="media-left" id="poster_avatar"><a href="#">';
         poster_avatar +=      '<img class="media-object" src="https://placeholdit.imgix.net/~text?w=100&amp;h=100&amp;txtsize=22&amp;txt=%5Bimg%5D" alt="Generic placeholder image">';
