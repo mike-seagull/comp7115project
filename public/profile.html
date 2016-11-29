@@ -62,6 +62,7 @@
   </div>
 </body>
 <script>
+
   var path_params = location.pathname.split("/");
 
   $( '#sign-out' ).on('click', function() {
@@ -75,6 +76,11 @@
       }
     });
   });
+  function likePost(post_id) {
+    $.post('/api/likePost', {post_id: post_id}, function(err) {
+      window.location = "/profile/"+path_params[2];
+    });
+  }
   $( '#follow' ).on('click', function() {
     $.get( "/api/getFollowers", function( followers ) {
       var isFollowing = false;
@@ -122,15 +128,15 @@
       });
     });
     */
-    $.get( "/api/getFollowers", function( followers ) {
-      var isFollowing = false;
-      for (var i=0; i<followers.length;i++) {
-        if (followers[i].follower_id == path_params[2]) {
-          isFollowing = true;
-          break;
-        }
-      }
+    $.get( "/api/getFollowers", get_data, function( followers ) {
       $.get( "/api/getSessionInfo", function( userInfo ) {
+        var isFollowing = false;
+        for (var i=0; i<followers.length;i++) {
+          if (followers[i].follower_id == userInfo.user_id) {
+            isFollowing = true;
+            break;
+          }
+        }
         if (isFollowing) {
           $( '#follow' ).removeClass('btn-primary');
           $( '#follow' ).addClass('btn-success');
@@ -138,16 +144,16 @@
         } else if ( userInfo.user_id == path_params[2]) {
           $( '#follow' ).addClass('hidden');
         }
-        $.get("/api/getProfileInfo", {user_id: path_params[2]}, function(profileInfo) {
-          $( '#nav' ).append('<h4>'+profileInfo.first_name+' '+profileInfo.last_name+'</h4>');
-          $( '#nav' ).append('<h4>'+profileInfo.email+'</h4>');
-          $.get("/api/getFollowing", {user_id: profileInfo.user_id}, function(following) {
-            $("#nav").append('<h4>Following: '+following.length+'</h4>');
-            $.get( "/api/getFollowers", {user_id: profileInfo.user_id}, function(followers) {
-              $("#nav").append('<h4>Followers: '+followers.length+'</h4>');
-            })
-          });
-        });
+      });
+    });
+    $.get("/api/getProfileInfo", {user_id: path_params[2]}, function(profileInfo) {
+      $( '#nav' ).append('<h4>'+profileInfo.first_name+' '+profileInfo.last_name+'</h4>');
+      $( '#nav' ).append('<h4>'+profileInfo.email+'</h4>');
+      $.get("/api/getFollowing", {user_id: profileInfo.user_id}, function(following) {
+        $("#nav").append('<h4>Following: '+following.length+'</h4>');
+        $.get( "/api/getFollowers", {user_id: profileInfo.user_id}, function(followers) {
+          $("#nav").append('<h4>Followers: '+followers.length+'</h4>');
+        })
       });
     });
     $.get( "/api/getProfileInfo", get_data, function( user_info ) {
@@ -155,6 +161,7 @@
     });
     $.get( "/api/getPostsForUser", get_data, function( posts ) {
       for (var i=0; i<posts.length ; i++) {
+        console.log(posts[i].like_value);
         var posts_div = '<div class="media">';
         var poster_avatar = '<div class="media-left" id="poster_avatar"><a href="#">';
         poster_avatar +=      '<img class="media-object" src="https://placeholdit.imgix.net/~text?w=100&amp;h=100&amp;txtsize=22&amp;txt=%5Bimg%5D" alt="Generic placeholder image">';
@@ -166,7 +173,7 @@
         single_post +=        '<p id="post_description">'+posts[i].description+'</p><p>';
         var reply =           '<a href="/reply/'+path_params[2]+'/'+posts[i].post_id+'" id="reply'+posts[i].post_id+'">Reply</a>';
         single_post +=        reply;
-        single_post +=        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" onclick="likePost('+posts[i].post_id+'")>Like</a>'
+        single_post +=        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" onclick="likePost('+posts[i].post_id+')">Like</a>'
         single_post +=      '</p></div>'
         posts_div += single_post;
         posts_div +=    "</div>";
@@ -174,11 +181,22 @@
 
         var get_data2 = {
           post_id: posts[i].post_id
-        }
+        };
+        var post = posts[i];
         $.get( "/api/getCommentsForPost", get_data2, function( comments ) {
-          if (comments.length > 0) {
-            $( '#post'+comments[0].post_id ).append('<p class="small">'+comments.length+' Comments '+posts[i].like_value+'</p>');
+          var coms = "";
+          if (comments.length == 1) {
+            coms = "1 Comment";
+          } else if (comments.length > 1) {
+            coms = comments.length + " Comments";
           }
+          var likes = "";
+          if (post.like_value == 1) {
+            likes = "1 Like";
+          } else if (post.like_value > 1){
+            likes = post.like_value + " Likes";
+          }
+          $( '#post'+comments[0].post_id ).append('<p class="small">'+coms+' '+likes+'</p>');
           for (var j=0 ; j<comments.length ; j++) {
             var comment_div =   '<div class="media">';
             var comment_avatar =  '<div class="media-left">';

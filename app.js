@@ -376,11 +376,11 @@ app.get('/api/getMainFeed', function(req, res) {
 		console.log("Going to use Neo");
 	}
 	else {
-		var sql = "SELECT p.post_id, p.description, u.first_name, u.last_name, f.follower_id AS user_id "+
-			"FROM post p "+
-			"JOIN follower f ON p.user_id=f.follower_id "+
-			"JOIN user u ON f.follower_id = u.user_id "+
-			"WHERE f.user_id = "+user_id+" OR p.user_id = "+user_id+
+		var sql = "SELECT p.post_id, p.description, u.first_name, u.last_name, p.user_id "+
+			"FROM follower f "+
+			"JOIN post p ON p.user_id=f.user_id "+
+			"JOIN user u ON u.user_id=p.user_id "+
+			"WHERE f.follower_id = "+user_id+" OR p.user_id = "+user_id+
 			" ORDER BY post_id DESC;"
 		sql_query(sql, function(err, followers_posts) {
 			res.send(followers_posts);
@@ -394,21 +394,21 @@ app.get('/api/getFollowers', function(req, res) {
 	}
 	var sql = "SELECT follower_id FROM follower WHERE user_id = "+user_id+";";
 	sql_query(sql, function(err, followers) {
-		followers.err = null;
+		followers["err"] = null;
 		res.send(followers);
 	});
 });
 app.get('/api/getFollowing', function(req, res) {
 	var user_id = req.query.user_id || req.cookies.user.user_id;
-	var sql = "SELECT follower_id FROM follower WHERE follower_id = "+user_id+";";
+	var sql = "SELECT user_id FROM follower WHERE follower_id = "+user_id+";";
 	sql_query(sql, function(err, following) {
-		following.err = null;
+		following["err"] = null;
 		res.send(following);
 	});
 });
 app.post('/api/followUser', function(req, res) {
-	var user_id = req.cookies.user.user_id;
-	var follower_id = req.body.user_id;
+	var follower_id = req.cookies.user.user_id;
+	var user_id = req.body.user_id;
 	if (user_id === 0 || follower_id === 0) {
 		res.send({error: "error getting user_id or follower_id"});
 	}
@@ -419,11 +419,10 @@ app.post('/api/followUser', function(req, res) {
 	});
 });
 app.delete('/api/unfollowUser', function(req, res) {
-	var user_id = req.cookies.user.user_id;
-	var follower_id = req.body.user_id;
+	var follower_id = req.cookies.user.user_id;
+	var user_id = req.body.user_id;
 	var sql = "DELETE from follower "+
 		"WHERE user_id = "+user_id+" AND follower_id = "+follower_id+";"
-	console.log(sql);
 	sql_query(sql, function(err, data) {
 		if (err) {
 			res.send({error: err});
@@ -431,8 +430,17 @@ app.delete('/api/unfollowUser', function(req, res) {
 			res.send({error: null});
 		}
 	});
-
-
+});
+app.post('/api/likePost', function(req, res) {
+	var post_id = req.body.post_id;
+	var sql = "UPDATE post SET like_value = like_value + 1 WHERE post_id = "+post_id+";";
+	sql_query(sql, function(err, data) {
+		if (err) {
+			res.send({error: err});
+		} else {
+			res.send({error: null});
+		}	
+	});
 });
 //for Neo4j Connectivity
 app.get('/neo', function(req, res){
