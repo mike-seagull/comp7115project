@@ -349,8 +349,7 @@ app.get('/api/getPostsForUser', function(req, res) {
 	if (use_neo4j) {
 		console.log("Going to use Neo");
 		if (post_id === undefined || post_id === null) {
-			var sql = "MATCH (usr: User)-[:posts]->(pt: Post) WHERE usr.user_id = \""+user_id+"\" AND pt.user_id = \""+user_id+"\" 
-						RETURN usr.first_name,usr.last_name,pt.description";
+			var sql = "MATCH (usr: User)-[:posts]->(pt: Post) WHERE usr.user_id = \""+user_id+"\" AND pt.user_id = \""+user_id+"\" RETURN usr.first_name,usr.last_name,pt.description";
 		} else {
 			var sql = "MATCH (usr: User)-[:posts]->(pt: Post) WHERE usr.id = \""+user_id+"\" AND pt.user_id = \""+user_id+"\" AND pt.id = \""+post_id+"\" RETURN usr.first_name,usr.last_name,pt.description";
 		}
