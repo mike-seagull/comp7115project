@@ -80,7 +80,8 @@
       window.location = "/profile/"+path_params[2];
     });
   }
-  $.get('/api/getAvatar', {user_id: path_params[2]}, function(data) {
+  var get_data = {user_id: path_params[2]};
+  $.get('/api/getAvatar', get_data, function(data) {
     $.get('/api/getSessionInfo', function(userInfo){
       var image_src = ""
       if (data.avatar_exists == true) {
@@ -95,35 +96,40 @@
     });
   });
   $( '#follow' ).on('click', function() {
-    $.get( "/api/getFollowers", function( followers ) {
-      var isFollowing = false;
-      for (var i=0; i<followers.length;i++) {
-        if (followers[i].follower_id == path_params[2]) {
-          isFollowing = true;
-          break;
+    var get_data = {user_id: path_params[2]};
+    $.get( "/api/getFollowers", get_data, function( followers ) {
+      $.get('/api/getSessionInfo', function(userInfo){  
+        console.log(followers);
+        var isFollowing = false;
+        for (var i=0; i<followers.length;i++) {
+          if (followers[i].follower_id == userInfo.user_id) {
+            console.log("following");
+            isFollowing = true;
+          }
         }
-      }
-      var call_data = {
-        user_id: path_params[2]
-      };
-      if (isFollowing) {
-        $.ajax({
-          url: "/api/unfollowUser",
-          type: "DELETE",
-          data: call_data,
-          success: function(data) {
+        var call_data = {
+          user_id: path_params[2]
+        };
+        console.log(isFollowing);
+        if (isFollowing == true) {
+          $.ajax({
+            url: "/api/unfollowUser",
+            type: "DELETE",
+            data: call_data,
+            success: function(data) {
+              if (data.error == null) {
+                window.location = "/profile/"+call_data.user_id;
+              }
+            }
+          });
+        } else {
+          $.post( '/api/followUser', call_data, function(data) {
             if (data.error == null) {
               window.location = "/profile/"+call_data.user_id;
             }
-          }
-        });
-      } else {
-        $.post( '/api/followUser', call_data, function(data) {
-          if (data.error == null) {
-            window.location = "/profile/"+call_data.user_id;
-          }
-        });
-      }
+          });
+        }
+      });
     });
   });
   var path_params = location.pathname.split("/");
@@ -208,43 +214,46 @@
         var get_data2 = {
           post_id: posts[i].post_id
         };
-        var post = posts[i];
+        var likes = "";
+        if (posts[i].like_value == 1) {
+          likes = "1 Like";
+        } else if (posts[i].like_value > 1){
+          likes = posts[i].like_value + " Likes";
+        }
+        $( '#post'+posts[i].post_id).append('<p class="small" id="post'+posts[i].post_id+'comslikes">'+likes+'</p>');
         $.get( "/api/getCommentsForPost", get_data2, function( comments ) {
-          var coms = "";
-          if (comments.length == 1) {
-            coms = "1 Comment";
-          } else if (comments.length > 1) {
-            coms = comments.length + " Comments";
-          }
-          var likes = "";
-          if (post.like_value == 1) {
-            likes = "1 Like";
-          } else if (post.like_value > 1){
-            likes = post.like_value + " Likes";
-          }
-          $( '#post'+comments[0].post_id ).append('<p class="small">'+coms+' '+likes+'</p>');
-          for (var j=0 ; j<comments.length ; j++) {
-            var comment_div =   '<div class="media">';
-            var comment_avatar =  '<div class="media-left">';
-            comment_avatar +=         '<a href="#">';
-            comment_avatar +=           '<img class="media-object" src="https://placeholdit.imgix.net/~text?w=100&amp;h=100&amp;txtsize=22&amp;txt=%5Bimg%5D" alt="Generic placeholder image">';
-            comment_avatar +=         '</a>';
-            comment_avatar +=     '</div>';
-            var comment =         '<div class="media-body">';
-
-            if (comments[j].user_id == path_params[2]) {
-              var commenter_name = comments[j].first_name+' '+comments[j].last_name;
-            }else {
-              var commenter_name = '<a href="/profile/'+comments[j].user_id+'">'+comments[j].first_name+' '+comments[j].last_name+'</a>';
+          if (comments.length > 0) {
+            var coms = "";
+            if (comments.length == 1) {
+              coms = "1 Comment";
+            } else if (comments.length > 1) {
+              coms = comments.length + " Comments";
             }
-            comment +=              '<h4 class="media-heading" id="commenter_name">'+commenter_name+'</h4>';
-            comment +=              '<p id="comment">'+comments[j].description+'</p>';
-            comment +=            '</div>';
-            comment +=          '</div>';
-            comment_div += comment_avatar;
-            comment_div += comment;
-            comment_div +=      '</div>';
-            $( '#post'+comments[j].post_id ).append(comment_div);
+            var likes = $( '#post'+comments[0].post_id+'comslikes' ).text();
+            $( '#post'+comments[0].post_id+'comslikes' ).text(likes + ' ' + coms);
+            for (var j=0 ; j<comments.length ; j++) {
+              var comment_div =   '<div class="media">';
+              var comment_avatar =  '<div class="media-left">';
+              comment_avatar +=         '<a href="#">';
+              comment_avatar +=           '<img class="media-object" src="https://placeholdit.imgix.net/~text?w=100&amp;h=100&amp;txtsize=22&amp;txt=%5Bimg%5D" alt="Generic placeholder image">';
+              comment_avatar +=         '</a>';
+              comment_avatar +=     '</div>';
+              var comment =         '<div class="media-body">';
+
+              if (comments[j].user_id == path_params[2]) {
+                var commenter_name = comments[j].first_name+' '+comments[j].last_name;
+              }else {
+                var commenter_name = '<a href="/profile/'+comments[j].user_id+'">'+comments[j].first_name+' '+comments[j].last_name+'</a>';
+              }
+              comment +=              '<h4 class="media-heading" id="commenter_name">'+commenter_name+'</h4>';
+              comment +=              '<p id="comment">'+comments[j].description+'</p>';
+              comment +=            '</div>';
+              comment +=          '</div>';
+              comment_div += comment_avatar;
+              comment_div += comment;
+              comment_div +=      '</div>';
+              $( '#post'+comments[j].post_id ).append(comment_div);
+            }
           }
         });
       }

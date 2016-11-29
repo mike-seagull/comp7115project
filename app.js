@@ -297,13 +297,13 @@ app.post('/api/newPost', function(req, res) {
 		});
 	}
 	else {
-		var sql = "INSERT INTO post (description, user_id) "+
-					"VALUES ('"+post+"', '"+user_id+"')";
+		var sql = "INSERT INTO post (description, like_value, user_id) "+
+					"VALUES ('"+post+"', 0, '"+user_id+"')";
 		sql_query(sql, function(err, results) {
 			if (err) {
 				res.status(500).send({accepted: false, message: err});
 			} else {
-				res.send({accepted: true, message: "Comment accepted"});
+				res.send({accepted: true, message: "Post accepted"});
 			}
 		});
 	}
@@ -466,7 +466,7 @@ app.get('/api/getFollowers', function(req, res) {
 	if (user_id === undefined || user_id === null) {
 		res.send({err: "not logged in"})
 	}
-	var sql = "SELECT follower_id FROM follower WHERE user_id = "+user_id+";";
+	var sql = "SELECT follower_id, user_id FROM follower WHERE user_id = "+user_id+";";
 	sql_query(sql, function(err, followers) {
 		followers["err"] = null;
 		res.send(followers);
