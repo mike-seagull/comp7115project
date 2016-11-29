@@ -22,6 +22,12 @@
 </div>
 
 <script>
+var use_neo4j = getParameterByName("useNeo4J");
+console.log(use_neo4j);
+if (use_neo4j === undefined || use_neo4j === null || typeof(variable) !== "boolean") {
+  use_neo4j = false;
+}
+
 var path_params = location.pathname.split("/");
 if ( path_params[1] == "reply" ) { 
 	var get_data = {
