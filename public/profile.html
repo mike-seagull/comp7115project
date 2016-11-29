@@ -161,7 +161,6 @@
     });
     $.get( "/api/getPostsForUser", get_data, function( posts ) {
       for (var i=0; i<posts.length ; i++) {
-        console.log(posts[i].like_value);
         var posts_div = '<div class="media">';
         var poster_avatar = '<div class="media-left" id="poster_avatar"><a href="#">';
         poster_avatar +=      '<img class="media-object" src="https://placeholdit.imgix.net/~text?w=100&amp;h=100&amp;txtsize=22&amp;txt=%5Bimg%5D" alt="Generic placeholder image">';
@@ -205,7 +204,13 @@
             comment_avatar +=         '</a>';
             comment_avatar +=     '</div>';
             var comment =         '<div class="media-body">';
-            comment +=              '<h4 class="media-heading" id="commenter_name">'+comments[j].first_name+' '+comments[j].last_name+'</h4>';
+
+            if (comments[j].user_id == path_params[2]) {
+              var commenter_name = comments[j].first_name+' '+comments[j].last_name;
+            }else {
+              var commenter_name = '<a href="/profile/'+comments[j].user_id+'">'+comments[j].first_name+' '+comments[j].last_name+'</a>';
+            }
+            comment +=              '<h4 class="media-heading" id="commenter_name">'+commenter_name+'</h4>';
             comment +=              '<p id="comment">'+comments[j].description+'</p>';
             comment +=            '</div>';
             comment +=          '</div>';
