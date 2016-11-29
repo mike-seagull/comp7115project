@@ -110,6 +110,11 @@ app.get('/', function(req, res){
 });
 
 app.get('/login', function(req, res) {
+	var useNeo4J = req.query.useNeo4J;
+	if (useNeo4J != "true") {
+		useNeo4J = "false"
+	}
+	res.cookie('use_neo4j', useNeo4J, { maxAge: 600000 });
 	var options = {
 		root: __dirname + '/public',
 		dotfiles: 'deny',
@@ -119,6 +124,11 @@ app.get('/login', function(req, res) {
 });
 
 app.get('/register', function(req, res) {
+	var useNeo4J = req.query.useNeo4J;
+	if (useNeo4J != "true") {
+		useNeo4J = "false"
+	}
+	res.cookie('use_neo4j', useNeo4J, { maxAge: 600000 });
 	var options = {
 		root: __dirname + '/public',
 		dotfiles: 'deny',
@@ -160,9 +170,8 @@ app.get('/profile/:user_id', function(req, res) {
 app.get('/api/checkcredentials', function(req, res) {
 	var username = req.query.username;
 	var password = req.query.password;
-	var use_neo4j = req.query.useNeo4J;
-	console.log(use_neo4j);
-	if (use_neo4j == true) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 		var sql = "MATCH (usr: User) WHERE usr.email = \""+username+"\" RETURN usr.first_name, usr.last_name, usr.password";
 		neo_query(sql, function(err, results) {
@@ -275,9 +284,8 @@ app.post('/api/register', function(req, res){
 app.post('/api/newPost', function(req, res) {
 	var user_id = req.cookies.user.user_id;
 	var post = req.body.post;
-	var use_neo4j = req.body.useNeo4J;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 		var sql = "CREATE (a:Post {description: \""+post+"\", user_id: "+user_id+"})";
 		neo_query(sql, function(err, results){
@@ -304,9 +312,8 @@ app.post('/api/newComment', function(req, res) {
 	var user_id = req.cookies.user.user_id;
 	var post_id = req.body.post_id;
 	var comment = req.body.comment;
-	var use_neo4j = req.body.useNeo4J;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 		var sql = "CREATE (a:Comment {description: \""+comment+"\", user_id: "+user_id+", post_id: "+post_id+"})";
 		neo_query(sql, function(err, results){
@@ -340,10 +347,8 @@ app.get('/api/getSessionInfo', function(req, res) {
 app.get('/api/getProfileInfo', function(req, res) {
 	var user_id = req.query.user_id;
 	var profile_info = {};
-	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 		var sql = "MATCH (usr: User) WHERE usr.user_id = \""+user_id+"\" RETURN usr.first_name, usr.last_name";
 		neo_query(sql, function(err, results){
@@ -370,9 +375,8 @@ app.get('/api/getProfileInfo', function(req, res) {
 app.get('/api/getPostsForUser', function(req, res) {
 	var user_id = req.query.user_id;
 	var post_id = req.query.post_id;
-	var use_neo4j = req.body.useNeo4J;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 		if (post_id === undefined || post_id === null) {
 			var sql = "MATCH (usr: User)-[:posts]->(pt: Post) WHERE usr.user_id = \""+user_id+"\" AND pt.user_id = \""+user_id+"\" RETURN usr.first_name,usr.last_name,pt.description";
@@ -411,10 +415,8 @@ app.get('/api/getPostsForUser', function(req, res) {
 });
 app.get('/api/getCommentsForPost', function(req, res) {
 	var post_id = req.query.post_id;
-	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 		var sql = "MATCH (usr: User)-[:posts]->(ct: Post) WHERE usr.id = ct.user_id AND ct.post_id= \""+post_id+"\" RETURN ct.id, ct.description,usr.id, usr.first_name,usr.last_name,ct.post_id";
 	neo_query(sql, function(err, comments) {
@@ -432,10 +434,8 @@ app.get('/api/getCommentsForPost', function(req, res) {
 });
 app.get('/api/getMainFeed', function(req, res) {
 	var user_id = req.cookies.user.user_id;
-	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 	}
 	else {
@@ -452,10 +452,8 @@ app.get('/api/getMainFeed', function(req, res) {
 });
 app.get('/api/getFollowers', function(req, res) {
 	var user_id = req.query.user_id || req.cookies.user.user_id;
-	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 		var sql = "MATCH (a: Follower) WHERE a.user_id = \""+user_id+"\" RETURN a.follower_id";
 		neo_query(sql, function(err, followers) {
@@ -477,10 +475,8 @@ app.get('/api/getFollowers', function(req, res) {
 });
 app.get('/api/getFollowing', function(req, res) {
 	var user_id = req.query.user_id || req.cookies.user.user_id;
-	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 		var sql = "MATCH (a: Follower) WHERE a.follower_id = \""+user_id+"\" RETURN a.user_id";
 		neo_query(sql, function(err, following) {
@@ -501,10 +497,8 @@ app.get('/api/getFollowing', function(req, res) {
 app.post('/api/followUser', function(req, res) {
 	var follower_id = req.cookies.user.user_id;
 	var user_id = req.body.user_id;
-	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 	if (user_id === 0 || follower_id === 0) {
 		res.send({error: "error getting user_id or follower_id"});
@@ -529,10 +523,8 @@ app.post('/api/followUser', function(req, res) {
 app.delete('/api/unfollowUser', function(req, res) {
 	var follower_id = req.cookies.user.user_id;
 	var user_id = req.body.user_id;
-	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 		var sql = "MATCH (a: Follower) WHERE a.user_id = \""+user_id+"\" AND a.follower_id = \""+follower_id+"\" DELETE a";
 	neo_query(sql, function(err, data) {
@@ -559,10 +551,8 @@ app.delete('/api/unfollowUser', function(req, res) {
 });
 app.post('/api/likePost', function(req, res) {
 	var post_id = req.body.post_id;
-	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
-
-	if (use_neo4j) {
+	var use_neo4j = req.cookies.use_neo4j;
+	if (use_neo4j == "true") {
 		console.log("Going to use Neo");
 		var sql = "";
 	neo_query(sql, function(err, data) {
