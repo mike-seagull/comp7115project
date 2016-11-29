@@ -62,7 +62,16 @@
   $.get( '/api/getSessionInfo', function(userInfo) {
     $( '#greeting' ).html( "Hello " + userInfo.first_name + " " + userInfo.last_name );
     $( '#myprofile' ).html( '<a href="/profile/'+userInfo.user_id+'">'+userInfo.first_name+' '+userInfo.last_name+'</a>' );
-    $.get( '/api/getFollowerFeed', function(posts){
+    $( '#submit-new-post' ).on('click', function() {
+      var post_data = {
+        post: $( '#new-post' ).val(),
+        comment: $( '#new-post' ).val(),
+      };
+      $.post('/api/newPost', post_data, function(result) {
+        window.location = "/main-feed";
+      });
+    });
+    $.get( '/api/getMainFeed', function(posts){
       for (var i=0; i<posts.length; i++) {
         var posts_div = '<div class="media">';
         var poster_avatar = '<div class="media-left" id="poster_avatar"><a href="#">';
@@ -71,7 +80,7 @@
         posts_div += poster_avatar;
 
         var single_post =   '<div class="media-body"  id="post'+posts[i].post_id+'">';
-        single_post +=        '<h4 class="media-heading" id="post_username"><a href="/profile/'+posts[i].follower_id+'">'+posts[i].first_name+' '+posts[i].last_name+'</a></h4>';
+        single_post +=        '<h4 class="media-heading" id="post_username"><a href="/profile/'+posts[i].user_id+'">'+posts[i].first_name+' '+posts[i].last_name+'</a></h4>';
         single_post +=        '<p id="post_description">'+posts[i].description+'</p><p>';
         var reply =           '<a href="/reply/'+posts[i].post_id+'" id="reply'+posts[i].post_id+'">Reply</a>';
         //single_post +=        reply;

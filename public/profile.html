@@ -138,6 +138,16 @@
         } else if ( userInfo.user_id == path_params[2]) {
           $( '#follow' ).addClass('hidden');
         }
+        $.get("/api/getProfileInfo", {user_id: path_params[2]}, function(profileInfo) {
+          $( '#nav' ).append('<h4>'+profileInfo.first_name+' '+profileInfo.last_name+'</h4>');
+          $( '#nav' ).append('<h4>'+profileInfo.email+'</h4>');
+          $.get("/api/getFollowing", {user_id: profileInfo.user_id}, function(following) {
+            $("#nav").append('<h4>Following: '+following.length+'</h4>');
+            $.get( "/api/getFollowers", {user_id: profileInfo.user_id}, function(followers) {
+              $("#nav").append('<h4>Followers: '+followers.length+'</h4>');
+            })
+          });
+        });
       });
     });
     $.get( "/api/getProfileInfo", get_data, function( user_info ) {
@@ -156,6 +166,7 @@
         single_post +=        '<p id="post_description">'+posts[i].description+'</p><p>';
         var reply =           '<a href="/reply/'+path_params[2]+'/'+posts[i].post_id+'" id="reply'+posts[i].post_id+'">Reply</a>';
         single_post +=        reply;
+        single_post +=        '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" onclick="likePost('+posts[i].post_id+'")>Like</a>'
         single_post +=      '</p></div>'
         posts_div += single_post;
         posts_div +=    "</div>";
@@ -166,7 +177,7 @@
         }
         $.get( "/api/getCommentsForPost", get_data2, function( comments ) {
           if (comments.length > 0) {
-            $( '#post'+comments[0].post_id ).append('<p class="small">'+comments.length+' Comments</p>');
+            $( '#post'+comments[0].post_id ).append('<p class="small">'+comments.length+' Comments '+posts[i].like_value+'</p>');
           }
           for (var j=0 ; j<comments.length ; j++) {
             var comment_div =   '<div class="media">';

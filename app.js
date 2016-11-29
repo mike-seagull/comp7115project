@@ -89,8 +89,9 @@ function neo_query(cql, callback) {
 	db.cypher({query: cql}, function (err, results) {
     	if (err) {
     		callback(err, null);
+    	} else {
+    		callback(null, results);
     	}
-    	callback(null, results);
 	});
 }
 
@@ -157,8 +158,6 @@ app.get('/api/checkcredentials', function(req, res) {
 	var username = req.query.username;
 	var password = req.query.password;
 	var use_neo4j = req.query.useNeo4J;
-	console.log(use_neo4j);
-	//var use_neo4j = true;
 
 	if (use_neo4j == true) {
 		console.log("Going to use Neo");
@@ -175,7 +174,7 @@ app.get('/api/checkcredentials', function(req, res) {
 			}
 		});
 	} else {
-		var sql = "SELECT user_id, password, first_name, last_name FROM user WHERE email = '"+username+"';";
+		var sql = "SELECT user_id, password, first_name, last_name, email FROM user WHERE email = '"+username+"';";
 		sql_query(sql, function(err, results) {
 			if (err) {
 				res.status(500).send({accepted: false, message: err});
@@ -248,7 +247,7 @@ app.post('/api/register', function(req, res){
 	}
 });
 app.post('/api/newPost', function(req, res) {
-	var user_id = req.body.user_id;
+	var user_id = req.cookies.user.user_id;
 	var post = req.body.post;
 	var use_neo4j = req.body.useNeo4J;
 	//var use_neo4j = true;
@@ -257,8 +256,7 @@ app.post('/api/newPost', function(req, res) {
 		console.log("Going to use Neo");
 		var sql = "CREATE (a:Post {description: \""+post+"\", user_id: "+user_id+"})";
 	}
-	else
-	{
+	else {
 		var sql = "INSERT INTO post (description, user_id) "+
 					"VALUES ('"+post+"', '"+user_id+"')";
 		sql_query(sql, function(err, results) {
@@ -267,7 +265,7 @@ app.post('/api/newPost', function(req, res) {
 			} else {
 				res.send({accepted: true, message: "Comment accepted"});
 			}
-		})
+		});
 	}
 });
 app.post('/api/newComment', function(req, res) {
@@ -313,7 +311,7 @@ app.get('/api/getProfileInfo', function(req, res) {
 	}
 	else
 	{
-	var sql = "SELECT first_name, last_name FROM user WHERE user_id = "+user_id+";";
+	var sql = "SELECT first_name, last_name, email, user_id FROM user WHERE user_id = "+user_id+";";
 	sql_query(sql, function(err, results) {
 		if (err) { res.status(500).send(); }
 		else {
@@ -390,7 +388,7 @@ app.get('/api/getMainFeed', function(req, res) {
 	}
 });
 app.get('/api/getFollowers', function(req, res) {
-	var user_id = req.cookies.user.user_id;
+	var user_id = req.query.user_id || req.cookies.user.user_id;
 	if (user_id === undefined || user_id === null) {
 		res.send({err: "not logged in"})
 	}
@@ -398,6 +396,14 @@ app.get('/api/getFollowers', function(req, res) {
 	sql_query(sql, function(err, followers) {
 		followers.err = null;
 		res.send(followers);
+	});
+});
+app.get('/api/getFollowing', function(req, res) {
+	var user_id = req.query.user_id || req.cookies.user.user_id;
+	var sql = "SELECT follower_id FROM follower WHERE follower_id = "+user_id+";";
+	sql_query(sql, function(err, following) {
+		following.err = null;
+		res.send(following);
 	});
 });
 app.post('/api/followUser', function(req, res) {
