@@ -158,7 +158,6 @@ app.get('/api/checkcredentials', function(req, res) {
 	var password = req.query.password;
 	var use_neo4j = req.query.useNeo4J;
 	console.log(use_neo4j);
-	//var use_neo4j = true;
 
 	if (use_neo4j == true) {
 		console.log("Going to use Neo");
@@ -223,7 +222,6 @@ app.post('/api/register', function(req, res){
 	var email = req.body.email;
 	var password = req.body.password;
 	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
 
 	if (use_neo4j) {
 		console.log("Going to use Neo");
@@ -251,11 +249,17 @@ app.post('/api/newPost', function(req, res) {
 	var user_id = req.body.user_id;
 	var post = req.body.post;
 	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
 
 	if (use_neo4j) {
 		console.log("Going to use Neo");
 		var sql = "CREATE (a:Post {description: \""+post+"\", user_id: "+user_id+"})";
+		neo_query(sql, function(err, results){
+			if(err) {
+				res.status(500).send({accepted: false, message: "ERROR: "+err});
+			} else {
+				res.send({accepted: true, message: "Post Created Successfully."});
+			}
+		});
 	}
 	else
 	{
@@ -275,11 +279,17 @@ app.post('/api/newComment', function(req, res) {
 	var post_id = req.body.post_id;
 	var comment = req.body.comment;
 	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
 
 	if (use_neo4j) {
 		console.log("Going to use Neo");
 		var sql = "CREATE (a:Comment {description: \""+comment+"\", user_id: "+user_id+", post_id: "+post_id+"})";
+		neo_query(sql, function(err, results){
+			if(err) {
+				res.status(500).send({accepted: false, message: "ERROR: "+err});
+			} else {
+				res.send({accepted: true, message: "Comment Created Successfully."});
+			}
+		});
 	} else {
 		var sql = "INSERT INTO comment (description, user_id, post_id) "+
 					"VALUES ('"+comment+"', '"+user_id+"', '"+post_id+"')";
@@ -310,6 +320,14 @@ app.get('/api/getProfileInfo', function(req, res) {
 	if (use_neo4j) {
 		console.log("Going to use Neo");
 		var sql = "MATCH (usr: User) WHERE usr.user_id = \""+user_id+"\" RETURN usr.first_name, usr.last_name";
+		neo_query(sql, function(err, results){
+			if(err) {
+				res.status(500).send();
+			} else {
+				var result = results[0];
+				res.send(result);
+			}
+		});
 	}
 	else
 	{
@@ -327,7 +345,6 @@ app.get('/api/getPostsForUser', function(req, res) {
 	var user_id = req.query.user_id;
 	var post_id = req.query.post_id;
 	var use_neo4j = req.body.useNeo4J;
-	//var use_neo4j = true;
 
 	if (use_neo4j) {
 		//console.log("Going to use Neo");

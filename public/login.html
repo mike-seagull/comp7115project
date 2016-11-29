@@ -72,11 +72,11 @@
 <script type="text/javascript" src="/js/neo4j.js"></script>
 <script>
 var use_neo4j = getParameterByName("useNeo4J");
-if (use_neo4j === undefined || use_neo4j === null) {
+console.log(use_neo4j);
+if (use_neo4j === undefined || use_neo4j === null || typeof(variable) !== "boolean") {
   use_neo4j = false;
-} else {
-  use_neo4j = true;
 }
+
 $("#login").submit(function( event ) { // clicking the submit button
   var get_data = {
     username: $("#username").val(),
