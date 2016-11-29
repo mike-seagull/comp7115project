@@ -416,6 +416,10 @@ app.get('/api/getCommentsForPost', function(req, res) {
 
 	if (use_neo4j) {
 		console.log("Going to use Neo");
+		var sql = "MATCH (usr: User)-[:posts]->(ct: Post) WHERE usr.id = ct.user_id AND ct.post_id= \""+post_id+"\" RETURN ct.id, ct.description,usr.id, usr.first_name,usr.last_name,ct.post_id";
+	neo_query(sql, function(err, comments) {
+		res.send(comments);
+	});
 	}
 	else
 	{
@@ -453,6 +457,11 @@ app.get('/api/getFollowers', function(req, res) {
 
 	if (use_neo4j) {
 		console.log("Going to use Neo");
+		var sql = "MATCH (a: Follower) WHERE a.user_id = \""+user_id+"\" RETURN a.follower_id";
+		neo_query(sql, function(err, followers) {
+		followers["err"] = null;
+		res.send(followers);
+	});
 	}
 	else
 	{
@@ -473,6 +482,11 @@ app.get('/api/getFollowing', function(req, res) {
 
 	if (use_neo4j) {
 		console.log("Going to use Neo");
+		var sql = "MATCH (a: Follower) WHERE a.follower_id = \""+user_id+"\" RETURN a.user_id";
+		neo_query(sql, function(err, following) {
+		following["err"] = null;
+		res.send(following);
+	});
 	}
 	else
 	{
@@ -492,6 +506,13 @@ app.post('/api/followUser', function(req, res) {
 
 	if (use_neo4j) {
 		console.log("Going to use Neo");
+	if (user_id === 0 || follower_id === 0) {
+		res.send({error: "error getting user_id or follower_id"});
+	}
+		var sql = "CREATE (a:Follower {user_id: \""+user_id+"\", follower_id: \""+follower_id+"\"})";
+		neo_query(sql, function(err, data) {
+		res.send({error: null});
+	});
 	}
 	else
 	{
@@ -513,6 +534,14 @@ app.delete('/api/unfollowUser', function(req, res) {
 
 	if (use_neo4j) {
 		console.log("Going to use Neo");
+		var sql = "MATCH (a: Follower) WHERE a.user_id = \""+user_id+"\" AND a.follower_id = \""+follower_id+"\" DELETE a";
+	neo_query(sql, function(err, data) {
+		if (err) {
+			res.send({error: err});
+		} else {
+			res.send({error: null});
+		}
+	});
 	}
 	else
 	{
@@ -535,6 +564,14 @@ app.post('/api/likePost', function(req, res) {
 
 	if (use_neo4j) {
 		console.log("Going to use Neo");
+		var sql = "";
+	neo_query(sql, function(err, data) {
+		if (err) {
+			res.send({error: err});
+		} else {
+			res.send({error: null});
+		}	
+	});
 	}
 	else
 	{
