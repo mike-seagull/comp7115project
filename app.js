@@ -175,7 +175,7 @@ app.get('/api/checkcredentials', function(req, res) {
 		results = results[0];
 		results.useNeo4J = true;
 		if (password == results.password) {
-			
+
 		neo_query(sql, function(err, results) {
 			if (err) {
 				res.status(500).send({accepted: false, message: err});
@@ -196,7 +196,6 @@ app.get('/api/checkcredentials', function(req, res) {
 			results = results[0];
 			results.useNeo4J = false;
 			if (password == results.password) {
->>>>>>> b92f740d6019218fd6c047cd66271d7a24279900
 
 				res.cookie('user', results, { maxAge: 600000 });
 
@@ -457,4 +456,3 @@ app.get('/neo', function(req, res){
 app.listen(app.get('port'), function() {
 	console.log("Running on port", app.get('port'));
 });
-
